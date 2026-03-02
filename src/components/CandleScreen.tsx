@@ -25,7 +25,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const [flameVisible, setFlameVisible] = useState(true);
   const [showConfetti, setShowConfetti] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
   const animFrameRef = useRef<number>(0);
 
   const startListening = useCallback(async () => {
@@ -37,7 +36,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       analyser.fftSize = 256;
       source.connect(analyser);
       audioContextRef.current = audioContext;
-      analyserRef.current = analyser;
       setPhase("listening");
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -57,10 +55,14 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       };
       detect();
     } catch {
-      // If mic denied, allow tap to blow
       setPhase("listening");
     }
   }, []);
+
+  // Auto-start mic on mount
+  useEffect(() => {
+    startListening();
+  }, [startListening]);
 
   useEffect(() => {
     return () => {
@@ -82,27 +84,9 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     }
   }, [phase, onComplete]);
 
-  const handleTapBlow = () => {
-    if (phase === "listening") {
-      setFlameVisible(false);
-      setPhase("blown");
-      audioContextRef.current?.close();
-    }
-  };
-
   return (
-    <div
-      className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50 select-none"
-      onClick={phase === "idle" ? startListening : phase === "listening" ? handleTapBlow : undefined}
-    >
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50 select-none">
       {showConfetti && <Confetti />}
-
-      {/* Prompt text */}
-      {phase === "idle" && (
-        <div className="animate-cinema-fade-in text-center mb-16 px-8">
-          <p className="text-muted-foreground text-sm tracking-widest uppercase mb-2">Tap to begin</p>
-        </div>
-      )}
 
       {/* Pre-blow text */}
       {(phase === "idle" || phase === "listening") && (
@@ -119,7 +103,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       {/* Candle */}
       {(phase === "idle" || phase === "listening") && (
         <div className="relative flex flex-col items-center">
-          {/* Flame */}
           {flameVisible && (
             <div className="relative mb-1">
               <div
@@ -133,7 +116,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
               }} />
             </div>
           )}
-          {/* Candle body */}
           <div className="w-6 h-24 rounded-sm" style={{
             background: "linear-gradient(to bottom, hsl(0 0% 90%), hsl(0 0% 80%))",
           }} />
@@ -145,11 +127,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
 
       {phase === "listening" && (
         <p className="text-muted-foreground text-xs mt-8 tracking-widest uppercase animate-cinema-fade-in">
-          Blow to extinguish… or tap
+          Blow to extinguish…
         </p>
       )}
 
-      {/* Messages after blow */}
       {phase === "message1" && (
         <div className="animate-cinema-fade-in text-center px-8">
           <h1 className="text-4xl font-bold text-glow" style={{ fontFamily: "'Playfair Display', serif", color: "hsl(330, 100%, 59%)" }}>
