@@ -1,14 +1,35 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState, useEffect, useCallback } from "react";
+import CandleScreen from "../components/CandleScreen";
+import MainApp from "../components/MainApp";
 
 const Index = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
+  const [introComplete, setIntroComplete] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleIntroComplete = useCallback(() => {
+    setIntroComplete(true);
+    // Trigger install prompt after intro
+    if (deferredPrompt) {
+      setTimeout(() => {
+        deferredPrompt.prompt();
+      }, 2000);
+    }
+  }, [deferredPrompt]);
+
+  if (!introComplete) {
+    return <CandleScreen onComplete={handleIntroComplete} />;
+  }
+
+  return <MainApp />;
 };
 
 export default Index;
