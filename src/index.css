@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Inter:wght@300;400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,45 +7,42 @@
 @layer base {
   :root {
     --background: 0 0% 0%;
-    --foreground: 0 0% 95%;
+    --foreground: 0 0% 90%;
 
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 95%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 90%;
 
-    --popover: 0 0% 5%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 90%;
 
     --primary: 330 100% 59%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 330 30% 12%;
-    --secondary-foreground: 330 100% 80%;
+    --secondary: 330 30% 10%;
+    --secondary-foreground: 330 100% 75%;
 
-    --muted: 0 0% 10%;
-    --muted-foreground: 0 0% 55%;
+    --muted: 0 0% 8%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 330 60% 15%;
-    --accent-foreground: 330 100% 80%;
+    --accent: 330 40% 12%;
+    --accent-foreground: 330 100% 75%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
     --ring: 330 100% 59%;
 
-    --radius: 0.75rem;
-
-    --glow-primary: 0 0 40px hsl(330 100% 59% / 0.3);
-    --glow-strong: 0 0 80px hsl(330 100% 59% / 0.5);
+    --radius: 0.5rem;
 
     --sidebar-background: 0 0% 3%;
-    --sidebar-foreground: 0 0% 95%;
+    --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 330 100% 59%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 330 60% 15%;
-    --sidebar-accent-foreground: 330 100% 80%;
-    --sidebar-border: 0 0% 15%;
+    --sidebar-accent: 330 40% 12%;
+    --sidebar-accent-foreground: 330 100% 75%;
+    --sidebar-border: 0 0% 12%;
     --sidebar-ring: 330 100% 59%;
   }
 }
@@ -56,47 +55,19 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
   }
 }
 
-@layer utilities {
-  .glow-pink {
-    box-shadow: var(--glow-primary);
-  }
-
-  .glow-pink-strong {
-    box-shadow: var(--glow-strong);
-  }
-
-  .text-glow {
-    text-shadow: 0 0 20px hsl(330 100% 59% / 0.5);
-  }
-
-  .gradient-text {
-    @apply bg-clip-text text-transparent;
-    background-image: linear-gradient(135deg, hsl(330 100% 70%), hsl(330 100% 50%));
-  }
-}
-
-/* Candle flame animation */
-@keyframes flicker {
-  0%, 100% { transform: scaleY(1) scaleX(1) rotate(0deg); opacity: 1; }
-  25% { transform: scaleY(1.05) scaleX(0.95) rotate(-1deg); opacity: 0.95; }
-  50% { transform: scaleY(0.95) scaleX(1.05) rotate(1deg); opacity: 1; }
-  75% { transform: scaleY(1.02) scaleX(0.98) rotate(-0.5deg); opacity: 0.97; }
-}
-
-@keyframes flame-glow {
-  0%, 100% { box-shadow: 0 0 20px 10px hsl(30 100% 60% / 0.4), 0 0 60px 20px hsl(330 100% 59% / 0.2); }
-  50% { box-shadow: 0 0 25px 12px hsl(30 100% 60% / 0.5), 0 0 70px 25px hsl(330 100% 59% / 0.3); }
-}
-
+/* Animations */
 @keyframes cinema-fade-in {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -105,45 +76,80 @@
   to { opacity: 0; }
 }
 
-@keyframes counter-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+@keyframes flicker {
+  0%, 100% { transform: scaleY(1) scaleX(1) rotate(0deg); opacity: 0.9; }
+  20% { transform: scaleY(1.04) scaleX(0.96) rotate(-0.5deg); opacity: 0.85; }
+  40% { transform: scaleY(0.97) scaleX(1.03) rotate(0.5deg); opacity: 0.95; }
+  60% { transform: scaleY(1.02) scaleX(0.98) rotate(-0.3deg); opacity: 0.88; }
+  80% { transform: scaleY(0.99) scaleX(1.01) rotate(0.2deg); opacity: 0.92; }
 }
 
-@keyframes scan-line {
-  0% { top: 0; }
-  100% { top: 100%; }
+@keyframes flame-glow {
+  0%, 100% { box-shadow: 0 0 15px 8px hsl(35 90% 55% / 0.25), 0 0 40px 15px hsl(35 80% 50% / 0.1); }
+  50% { box-shadow: 0 0 20px 10px hsl(35 90% 55% / 0.35), 0 0 50px 20px hsl(35 80% 50% / 0.15); }
 }
 
 @keyframes soft-glow-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
 }
 
-.animate-flicker {
-  animation: flicker 0.8s ease-in-out infinite;
+@keyframes flame-die {
+  0% { opacity: 1; transform: scaleY(1) scaleX(1); }
+  50% { opacity: 0.5; transform: scaleY(0.6) scaleX(1.3); }
+  100% { opacity: 0; transform: scaleY(0) scaleX(2); }
 }
 
-.animate-flame-glow {
-  animation: flame-glow 1.5s ease-in-out infinite;
+@keyframes particle-rise {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(0); }
 }
 
 .animate-cinema-fade-in {
-  animation: cinema-fade-in 1.2s ease-out forwards;
+  animation: cinema-fade-in 1.5s ease-out forwards;
+}
+
+.animate-cinema-fade-in-slow {
+  animation: cinema-fade-in 2.5s ease-out forwards;
 }
 
 .animate-cinema-fade-out {
-  animation: cinema-fade-out 0.8s ease-out forwards;
+  animation: cinema-fade-out 1s ease-out forwards;
 }
 
-.animate-counter-pulse {
-  animation: counter-pulse 2s ease-in-out infinite;
+.animate-flicker {
+  animation: flicker 1.2s ease-in-out infinite;
 }
 
-.animate-scan-line {
-  animation: scan-line 2s ease-in-out;
+.animate-flame-glow {
+  animation: flame-glow 2s ease-in-out infinite;
 }
 
 .animate-soft-glow {
   animation: soft-glow-pulse 3s ease-in-out infinite;
+}
+
+.animate-flame-die {
+  animation: flame-die 1.2s ease-out forwards;
+}
+
+.text-glow-soft {
+  text-shadow: 0 0 30px hsl(330 100% 59% / 0.3);
+}
+
+/* Snap scroll */
+.snap-container {
+  height: 100vh;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.snap-section {
+  height: 100vh;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }

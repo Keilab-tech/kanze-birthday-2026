@@ -1,33 +1,43 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import Confetti from "./Confetti";
+import GoldenParticles from "./GoldenParticles";
 
-type Phase = "idle" | "listening" | "blown" | "message1" | "message2" | "message3" | "done";
-
-const useBlownSequence = (phase: Phase, setPhase: (p: Phase) => void) => {
-  const firedRef = useRef(false);
-  useEffect(() => {
-    if (phase === "blown" && !firedRef.current) {
-      firedRef.current = true;
-      setTimeout(() => setPhase("message1"), 1500);
-      setTimeout(() => setPhase("message2"), 4000);
-      setTimeout(() => setPhase("message3"), 6500);
-      setTimeout(() => setPhase("done"), 9500);
-    }
-  }, [phase, setPhase]);
-};
+type Phase = "intro" | "candle" | "waiting" | "listening" | "blown" | "message1" | "message2" | "message3" | "done";
 
 interface CandleScreenProps {
   onComplete: () => void;
 }
 
 const CandleScreen = ({ onComplete }: CandleScreenProps) => {
-  const [phase, setPhase] = useState<Phase>("idle");
-  const [flameVisible, setFlameVisible] = useState(true);
-  const [showConfetti, setShowConfetti] = useState(false);
+  const [phase, setPhase] = useState<Phase>("intro");
+  const [showWishText, setShowWishText] = useState(false);
+  const [flameIntensity, setFlameIntensity] = useState(1);
+  const [showParticles, setShowParticles] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
+  const firedRef = useRef(false);
 
+  // Phase 1: Intro text sequence
+  useEffect(() => {
+    if (phase !== "intro") return;
+    const t1 = setTimeout(() => setPhase("candle"), 800);
+    return () => clearTimeout(t1);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== "candle") return;
+    const t = setTimeout(() => setShowWishText(true), 2000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  useEffect(() => {
+    if (!showWishText) return;
+    const t = setTimeout(() => setPhase("waiting"), 1500);
+    return () => clearTimeout(t);
+  }, [showWishText]);
+
+  // Tap to activate mic
   const startListening = useCallback(async () => {
+    if (phase !== "waiting") return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const audioContext = new AudioContext();
@@ -44,9 +54,15 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
         analyser.getByteFrequencyData(dataArray);
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
-        if (avg > 45) {
-          setFlameVisible(false);
+        // React to sound before extinguishing
+        if (avg > 15 && avg <= 40) {
+          setFlameIntensity(Math.max(0.4, 1 - (avg - 15) / 40));
+        }
+
+        if (avg > 40) {
+          setFlameIntensity(0);
           setPhase("blown");
+          setShowParticles(true);
           stream.getTracks().forEach((t) => t.stop());
           audioContext.close();
           return;
@@ -55,14 +71,28 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       };
       detect();
     } catch {
+      // If mic denied, still allow progression
       setPhase("listening");
     }
-  }, []);
+  }, [phase]);
 
-  // Auto-start mic on mount
+  // Post-blow sequence
   useEffect(() => {
-    startListening();
-  }, [startListening]);
+    if (phase === "blown" && !firedRef.current) {
+      firedRef.current = true;
+      setTimeout(() => setPhase("message1"), 2000);
+      setTimeout(() => setPhase("message2"), 5000);
+      setTimeout(() => setPhase("message3"), 8000);
+      setTimeout(() => setPhase("done"), 11000);
+    }
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase === "done") {
+      const t = setTimeout(onComplete, 2000);
+      return () => clearTimeout(t);
+    }
+  }, [phase, onComplete]);
 
   useEffect(() => {
     return () => {
@@ -71,85 +101,104 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     };
   }, []);
 
-  useBlownSequence(phase, setPhase);
-
-  useEffect(() => {
-    if (phase === "blown") setShowConfetti(true);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase === "done") {
-      const t = setTimeout(onComplete, 1500);
-      return () => clearTimeout(t);
-    }
-  }, [phase, onComplete]);
+  const showCandle = phase === "candle" || phase === "waiting" || phase === "listening";
+  const showPreText = phase === "candle" || phase === "waiting" || phase === "listening";
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50 select-none">
-      {showConfetti && <Confetti />}
+    <div
+      className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50 select-none"
+      onClick={phase === "waiting" ? startListening : undefined}
+      style={{ cursor: phase === "waiting" ? "pointer" : "default" }}
+    >
+      {showParticles && <GoldenParticles />}
 
       {/* Pre-blow text */}
-      {(phase === "idle" || phase === "listening") && (
-        <div className="animate-cinema-fade-in text-center mb-12 px-8">
-          <p className="text-foreground/80 text-lg leading-relaxed italic" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Before Chapter 21 begins…
+      {showPreText && (
+        <div className="text-center mb-16 px-8" style={{ opacity: phase === "candle" && !showWishText ? 0 : 1 }}>
+          <p
+            className="text-foreground/60 text-xl leading-relaxed animate-cinema-fade-in"
+            style={{ animationDelay: "0s" }}
+          >
+            Before Chapter 21 begins...
           </p>
-          <p className="text-foreground/80 text-lg mt-2 italic" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Make a wish.
-          </p>
+          {showWishText && (
+            <p
+              className="text-foreground/60 text-xl mt-4 animate-cinema-fade-in"
+              style={{ animationDelay: "0.3s" }}
+            >
+              Make a wish.
+            </p>
+          )}
         </div>
       )}
 
       {/* Candle */}
-      {(phase === "idle" || phase === "listening") && (
-        <div className="relative flex flex-col items-center">
-          {flameVisible && (
-            <div className="relative mb-1">
-              <div
-                className="w-4 h-8 rounded-full animate-flicker animate-flame-glow"
-                style={{
-                  background: "linear-gradient(to top, hsl(30, 100%, 60%), hsl(45, 100%, 70%), hsl(45, 100%, 90%))",
-                }}
-              />
-              <div className="absolute -inset-4 rounded-full animate-soft-glow" style={{
-                background: "radial-gradient(circle, hsl(30 100% 60% / 0.3), transparent 70%)",
-              }} />
-            </div>
-          )}
-          <div className="w-6 h-24 rounded-sm" style={{
-            background: "linear-gradient(to bottom, hsl(0 0% 90%), hsl(0 0% 80%))",
-          }} />
-          <div className="w-10 h-2 rounded-b-sm" style={{
-            background: "hsl(0 0% 70%)",
-          }} />
+      {showCandle && (
+        <div className="relative flex flex-col items-center animate-cinema-fade-in">
+          {/* Flame */}
+          <div className="relative mb-0.5" style={{ opacity: flameIntensity, transition: "opacity 0.15s ease" }}>
+            {flameIntensity > 0 && (
+              <>
+                <div
+                  className="w-3 h-7 rounded-full animate-flicker"
+                  style={{
+                    background: "linear-gradient(to top, hsl(30, 80%, 50%), hsl(40, 90%, 65%), hsl(45, 95%, 85%))",
+                    transform: `scaleY(${flameIntensity})`,
+                    transition: "transform 0.15s ease",
+                  }}
+                />
+                <div
+                  className="absolute -inset-6 rounded-full animate-flame-glow"
+                  style={{
+                    background: "radial-gradient(circle, hsl(35 80% 55% / 0.15), transparent 70%)",
+                  }}
+                />
+              </>
+            )}
+          </div>
+          {/* Wick */}
+          <div className="w-0.5 h-2 bg-foreground/30" />
+          {/* Candle body */}
+          <div
+            className="w-5 h-20 rounded-sm"
+            style={{ background: "linear-gradient(to bottom, hsl(0 0% 85%), hsl(0 0% 75%))" }}
+          />
         </div>
       )}
 
-      {phase === "listening" && (
-        <p className="text-muted-foreground text-xs mt-8 tracking-widest uppercase animate-cinema-fade-in">
-          Blow to extinguish…
+      {/* Tap hint */}
+      {phase === "waiting" && (
+        <p className="text-muted-foreground/40 text-xs mt-12 tracking-[0.3em] uppercase animate-cinema-fade-in">
+          Tap to begin
         </p>
       )}
 
+      {phase === "listening" && (
+        <p className="text-muted-foreground/30 text-xs mt-12 tracking-[0.3em] uppercase animate-cinema-fade-in">
+          Blow gently...
+        </p>
+      )}
+
+      {/* Post-blow messages */}
       {phase === "message1" && (
-        <div className="animate-cinema-fade-in text-center px-8">
-          <h1 className="text-4xl font-bold text-glow" style={{ fontFamily: "'Playfair Display', serif", color: "hsl(330, 100%, 59%)" }}>
+        <div className="animate-cinema-fade-in-slow text-center px-8">
+          <h1 className="text-5xl text-foreground/90 text-glow-soft" style={{ fontWeight: 300 }}>
             Happy 21st, Kanze.
           </h1>
         </div>
       )}
 
       {phase === "message2" && (
-        <div className="animate-cinema-fade-in text-center px-8">
-          <p className="text-foreground/80 text-xl italic" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <div className="animate-cinema-fade-in-slow text-center px-8">
+          <p className="text-foreground/50 text-xl" style={{ fontWeight: 300 }}>
             That's a powerful wish.
           </p>
         </div>
       )}
 
       {phase === "message3" && (
-        <div className="animate-cinema-fade-in text-center px-8">
-          <p className="text-foreground/70 text-lg" style={{ fontFamily: "'Playfair Display', serif" }}>
+        <div className="animate-cinema-fade-in-slow text-center px-8">
+          <p className="text-foreground/40 text-lg tracking-wide" style={{ fontWeight: 300 }}>
             Let's see what 21 does with it.
           </p>
         </div>
