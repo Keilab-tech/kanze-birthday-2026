@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const SECRET_PASSWORD = "kanze21";
+const SECRET_PASSWORD = "habibi";
 
 const SecretMode = () => {
   const [unlocked, setUnlocked] = useState(false);
