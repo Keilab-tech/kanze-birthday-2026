@@ -338,6 +338,18 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   style={{ width: "2px", height: "8px", backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-4px" }}
                 />
               </div>
+              {/* Smoke wisp after flame goes out */}
+              {phase === "blown" && (
+                <motion.div
+                  className="absolute left-1/2"
+                  style={{ transform: "translateX(-50%)", top: "20px", zIndex: 3 }}
+                  initial={{ opacity: 0.7, y: 0 }}
+                  animate={{ opacity: 0, y: -60 }}
+                  transition={{ duration: 2.5, ease: "easeOut" }}
+                >
+                  <div style={{ fontSize: "1.8rem", filter: "grayscale(1) opacity(0.6)" }}>💨</div>
+                </motion.div>
+              )}
               {/* Cake image — original with mask to hide dark bg */}
               <img
                 src="/images/cake-final.png"
