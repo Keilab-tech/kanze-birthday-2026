@@ -198,10 +198,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       <AnimatePresence>
         {showCandle && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1 }}
+            transition={{ duration: 0.4 }}
             className="relative flex flex-col items-center"
           >
             {/* Flame */}
