@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useMusic } from "@/contexts/MusicContext";
+import { useLocation } from "react-router-dom";
 import { SkipBack, Play, Pause, SkipForward } from "lucide-react";
 
 const BAR_COUNT = 32;
@@ -82,8 +83,9 @@ const MusicPlayerBar = () => {
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const location = useLocation();
 
-  if (!hasStarted) return null;
+  if (!hasStarted || location.pathname !== "/hub") return null;
 
   return (
     <AnimatePresence>
