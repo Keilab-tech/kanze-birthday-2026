@@ -302,38 +302,50 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="absolute left-1/2 flex flex-col items-center"
+            className="absolute left-1/2"
             style={{ transform: "translateX(-50%)", bottom: "-60px" }}
           >
-            {/* Flame — 🔥 emoji, positioned above cake */}
-            <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.3s ease" }}>
-              {flameIntensity > 0 && (
+            {/* Cake + flame as a single unit */}
+            <div className="relative" style={{ width: "480px", maxWidth: "120vw" }}>
+              {/* Flame — centered on top of cake */}
+              <div
+                className="absolute left-1/2"
+                style={{
+                  transform: "translateX(-50%)",
+                  top: "-60px",
+                  opacity: flameIntensity,
+                  transition: "opacity 0.3s ease",
+                  zIndex: 2,
+                }}
+              >
+                {flameIntensity > 0 && (
+                  <div
+                    className="animate-flicker text-center"
+                    style={{
+                      fontSize: "5.6rem",
+                      transform: `scaleY(${flameIntensity})`,
+                      transition: "transform 0.15s ease",
+                      lineHeight: 1,
+                    }}
+                  >
+                    🔥
+                  </div>
+                )}
+                {/* Wick */}
                 <div
-                  className="animate-flicker text-center"
-                  style={{
-                    fontSize: "5.6rem",
-                    transform: `scaleY(${flameIntensity})`,
-                    transition: "transform 0.15s ease",
-                    lineHeight: 1,
-                  }}
-                >
-                  🔥
-                </div>
-              )}
+                  className="mx-auto"
+                  style={{ width: "3px", height: "14px", backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }}
+                />
+              </div>
+              {/* Cake image — no background, no glow, no shadows */}
+              <img
+                src="/images/cake-final.png"
+                alt="Birthday cake"
+                className="w-full h-auto block"
+                style={{ filter: "none", boxShadow: "none" }}
+                draggable={false}
+              />
             </div>
-            {/* Wick */}
-            <div className="w-1 h-4" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }} />
-            {/* Birthday Cake — 2x larger, no glow mask */}
-            <img
-              src="/images/cake-final.png"
-              alt="Birthday cake"
-              style={{
-                marginTop: "-6px",
-                width: "480px",
-                maxWidth: "120vw",
-              }}
-              draggable={false}
-            />
           </motion.div>
         )}
       </AnimatePresence>
