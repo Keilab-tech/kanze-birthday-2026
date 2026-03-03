@@ -59,31 +59,30 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     }
   }, [phase]);
 
+  const blowCooldownRef = useRef(false);
+
   const startDetection = useCallback((analyser: AnalyserNode, stream: MediaStream, audioContext: AudioContext) => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
     const detect = () => {
       analyser.getByteFrequencyData(dataArray);
       const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
-      // Lower threshold for mobile (20 instead of 40)
       if (avg > 8 && avg <= 20) {
         setFlameIntensity(Math.max(0.3, 1 - (avg - 8) / 15));
       }
 
-      if (avg > 20) {
+      if (avg > 20 && !blowCooldownRef.current) {
+        blowCooldownRef.current = true;
         blowCountRef.current += 1;
         setFlameIntensity(0);
 
         if (blowCountRef.current >= 3) {
-          // Final blow — extinguish for real
           setPhase("blown");
           stream.getTracks().forEach(t => t.stop());
           audioContext.close();
           return;
         } else {
-          // Temporary blow — show smoke, then relight
           setPhase("smoke-relight");
-          // Pause detection briefly
           return;
         }
       }
@@ -92,22 +91,21 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     detect();
   }, []);
 
-  // Smoke-relight phase: show smoke + "Oops", relight flame gradually, then resume listening
+  // Smoke-relight phase: show smoke + "Oops", relight flame, then resume listening
   useEffect(() => {
     if (phase !== "smoke-relight") return;
-    // After 1.2s, start relighting the flame
+    // After 1.5s, relight the flame
     const relightTimer = setTimeout(() => {
-      setFlameIntensity(0.3);
-      setTimeout(() => setFlameIntensity(0.6), 300);
-      setTimeout(() => setFlameIntensity(1), 600);
-    }, 1200);
-    // After 2.5s total, resume listening
+      setFlameIntensity(1);
+    }, 1500);
+    // After 2.5s, resume listening and reset cooldown
     const resumeTimer = setTimeout(() => {
+      blowCooldownRef.current = false;
       setPhase("listening");
       if (analyserRef.current && streamRef.current && audioContextRef.current) {
         startDetection(analyserRef.current, streamRef.current, audioContextRef.current);
       }
-    }, 2500);
+    }, 2800);
     return () => {
       clearTimeout(relightTimer);
       clearTimeout(resumeTimer);
@@ -146,7 +144,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   }, []);
 
   const showCandle = ["candle", "wish", "waiting", "listening", "smoke-relight"].includes(phase);
-  const showFlame = phase !== "smoke-relight" || flameIntensity > 0;
 
   return (
     <div
@@ -330,7 +327,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
           >
             {/* Flame — 🔥 emoji */}
             <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.3s ease" }}>
-              {showFlame && flameIntensity > 0 && (
+              {flameIntensity > 0 && (
                 <>
                   {/* Outer magical glow pulse */}
                   <div
