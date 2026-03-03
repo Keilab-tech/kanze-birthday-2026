@@ -167,35 +167,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       {/* Countdown Clock */}
       <CountdownClock />
 
-      {/* Floating balloons — bigger and more realistic */}
-      {showCandle && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[
-            { emoji: "🎈", left: 8, dur: 14, delay: 0, size: "3rem" },
-            { emoji: "🎈", left: 25, dur: 18, delay: 3, size: "3.5rem" },
-            { emoji: "🎈", left: 45, dur: 13, delay: 1, size: "2.8rem" },
-            { emoji: "🎈", left: 62, dur: 16, delay: 4, size: "3.2rem" },
-            { emoji: "🎈", left: 78, dur: 20, delay: 2, size: "3.8rem" },
-            { emoji: "🎈", left: 90, dur: 15, delay: 5, size: "2.5rem" },
-            { emoji: "🎈", left: 35, dur: 22, delay: 6, size: "3rem" },
-          ].map((b, i) => (
-            <div
-              key={i}
-              className="absolute"
-              style={{
-                left: `${b.left}%`,
-                fontSize: b.size,
-                opacity: 0.3,
-                animation: `balloon-float ${b.dur}s ease-in-out infinite`,
-                animationDelay: `${b.delay}s`,
-                filter: "drop-shadow(0 2px 6px hsl(340 60% 50% / 0.15))",
-              }}
-            >
-              {b.emoji}
-            </div>
-          ))}
-        </div>
-      )}
+
 
       {/* Fireworks phase — outside centered content for full-screen effect */}
       {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}

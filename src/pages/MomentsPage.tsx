@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
+import loveEmojiChat from "@/assets/love-emoji-chat.jpeg";
 
 interface MomentFile {
   name: string;
@@ -105,7 +106,6 @@ const MomentsPage = () => {
                 onClick={() => setSelected(file)}
               >
                 <img src={file.url} alt={file.name} className="w-full rounded-2xl" loading="lazy" />
-                {/* Caption overlay */}
                 <div
                   className="absolute bottom-0 left-0 right-0 p-3 rounded-b-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
@@ -118,6 +118,27 @@ const MomentsPage = () => {
                 </div>
               </motion.div>
             ))}
+
+            {/* Love emoji chat screenshot */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: files.length * 0.08 }}
+              className="break-inside-avoid rounded-2xl overflow-hidden shadow-md cursor-pointer relative"
+              onClick={() => setSelected({ name: "love-emoji-chat", url: loveEmojiChat })}
+            >
+              <img src={loveEmojiChat} alt="First love emoji chat" className="w-full rounded-2xl" loading="lazy" />
+              <div
+                className="absolute bottom-0 left-0 right-0 p-3 rounded-b-2xl"
+                style={{
+                  background: "linear-gradient(transparent, hsl(340, 60%, 70%, 0.8))",
+                }}
+              >
+                <p className="text-white text-xs text-center" style={{ fontFamily: "'Dancing Script', cursive" }}>
+                  First time you sent me a love emoji 😂
+                </p>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>
