@@ -344,13 +344,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             <div className="w-1 h-4" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }} />
             {/* Birthday Cake */}
             <img
-              src="/images/cake-nobg.png"
+              src="/images/cake-dark2.png"
               alt="Birthday cake"
               className="w-52 h-auto"
-              style={{
-                marginTop: "-6px",
-                filter: "drop-shadow(0 8px 25px hsl(340 60% 50% / 0.4))",
-              }}
+              style={{ marginTop: "-6px" }}
               draggable={false}
             />
           </motion.div>
