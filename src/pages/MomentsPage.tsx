@@ -85,15 +85,6 @@ const MomentsPage = () => {
           <div className="flex justify-center items-center h-40">
             <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           </div>
-        ) : files.length === 0 ? (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center text-muted-foreground mt-20"
-          >
-            No moments yet. Upload screenshots to the{" "}
-            <span className="font-medium text-primary">moments</span> folder in storage.
-          </motion.p>
         ) : (
           <div className="columns-2 gap-3 space-y-3">
             {files.map((file, i) => (
