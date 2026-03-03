@@ -4,7 +4,7 @@ import CountdownClock from "./CountdownClock";
 import Fireworks from "./Fireworks";
 import { useMusic } from "@/contexts/MusicContext";
 
-type Phase = "intro" | "candle" | "wish" | "waiting" | "listening" | "blown" | "fireworks" | "birthday-text" | "done";
+type Phase = "intro" | "candle" | "wish" | "waiting" | "listening" | "smoke-relight" | "blown" | "fireworks" | "birthday-text" | "done";
 
 interface CandleScreenProps {
   onComplete: () => void;
@@ -13,6 +13,9 @@ interface CandleScreenProps {
 const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const [phase, setPhase] = useState<Phase>("intro");
   const [flameIntensity, setFlameIntensity] = useState(1);
+  const blowCountRef = useRef(0);
+  const streamRef = useRef<MediaStream | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
   const { start: startMusic } = useMusic();
@@ -41,37 +44,67 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     if (phase !== "waiting") return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
       source.connect(analyser);
       audioContextRef.current = audioContext;
+      analyserRef.current = analyser;
       setPhase("listening");
-
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const detect = () => {
-        analyser.getByteFrequencyData(dataArray);
-        const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
-        if (avg > 12 && avg <= 40) {
-          setFlameIntensity(Math.max(0.3, 1 - (avg - 12) / 35));
-        }
-
-        if (avg > 40) {
-          setFlameIntensity(0);
-          setPhase("blown");
-          stream.getTracks().forEach(t => t.stop());
-          audioContext.close();
-          return;
-        }
-        animFrameRef.current = requestAnimationFrame(detect);
-      };
-      detect();
+      startDetection(analyser, stream, audioContext);
     } catch {
       setPhase("listening");
     }
   }, [phase]);
+
+  const startDetection = useCallback((analyser: AnalyserNode, stream: MediaStream, audioContext: AudioContext) => {
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const detect = () => {
+      analyser.getByteFrequencyData(dataArray);
+      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+
+      // Lower threshold for mobile (20 instead of 40)
+      if (avg > 8 && avg <= 20) {
+        setFlameIntensity(Math.max(0.3, 1 - (avg - 8) / 15));
+      }
+
+      if (avg > 20) {
+        blowCountRef.current += 1;
+        setFlameIntensity(0);
+
+        if (blowCountRef.current >= 3) {
+          // Final blow — extinguish for real
+          setPhase("blown");
+          stream.getTracks().forEach(t => t.stop());
+          audioContext.close();
+          return;
+        } else {
+          // Temporary blow — show smoke, then relight
+          setPhase("smoke-relight");
+          // Pause detection briefly
+          return;
+        }
+      }
+      animFrameRef.current = requestAnimationFrame(detect);
+    };
+    detect();
+  }, []);
+
+  // Smoke-relight phase: show smoke + "Oops" then relight after 2s
+  useEffect(() => {
+    if (phase !== "smoke-relight") return;
+    const t = setTimeout(() => {
+      setFlameIntensity(1);
+      setPhase("listening");
+      // Resume detection
+      if (analyserRef.current && streamRef.current && audioContextRef.current) {
+        startDetection(analyserRef.current, streamRef.current, audioContextRef.current);
+      }
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [phase, startDetection]);
 
   // Post-blow → fireworks
   useEffect(() => {
@@ -104,7 +137,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     };
   }, []);
 
-  const showCandle = ["candle", "wish", "waiting", "listening"].includes(phase);
+  const showCandle = ["candle", "wish", "waiting", "listening", "smoke-relight"].includes(phase);
 
   return (
     <div
@@ -239,6 +272,38 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             >
               Blow gently... 🌬️
             </motion.p>
+          )}
+        </AnimatePresence>
+
+        {/* Smoke + Oops message */}
+        <AnimatePresence>
+          {phase === "smoke-relight" && (
+            <motion.div
+              initial={{ opacity: 0, y: 0 }}
+              animate={{ opacity: 1, y: -10 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex flex-col items-center mt-6"
+            >
+              {/* Smoke trail */}
+              <motion.div
+                initial={{ opacity: 0.8, y: 0 }}
+                animate={{ opacity: 0, y: -40 }}
+                transition={{ duration: 1.8, ease: "easeOut" }}
+                className="text-3xl"
+              >
+                💨
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="text-lg mt-2"
+                style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Dancing Script', cursive" }}
+              >
+                Oops, try that again! 😄
+              </motion.p>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
