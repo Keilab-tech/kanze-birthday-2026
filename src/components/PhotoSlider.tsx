@@ -1,17 +1,18 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
-const SWIPE_THRESHOLD = 50;
-const CARD_W = 220;
-const CARD_H = 300;
+const CARD_W = 200;
+const CARD_GAP = 20;
+const STEP = CARD_W + CARD_GAP;
+const SPEED = 0.6; // px per frame
 
 const PhotoSlider = () => {
   const [images, setImages] = useState<string[]>([]);
-  const [current, setCurrent] = useState(0);
-  const [dragOffset, setDragOffset] = useState(0);
-  const touchStartX = useRef(0);
-  const isDragging = useRef(false);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const rafRef = useRef(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -33,102 +34,90 @@ const PhotoSlider = () => {
     load();
   }, []);
 
-  const next = useCallback(() => {
-    if (images.length === 0) return;
-    setCurrent(prev => (prev + 1) % images.length);
-  }, [images.length]);
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => setContainerWidth(entry.contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
 
-  const prev = useCallback(() => {
-    if (images.length === 0) return;
-    setCurrent(prev => (prev - 1 + images.length) % images.length);
-  }, [images.length]);
+  const applyTransforms = useCallback(() => {
+    const track = trackRef.current;
+    if (!track || containerWidth === 0) return;
+    const center = containerWidth / 2;
+    const children = track.children as HTMLCollectionOf<HTMLElement>;
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const childCenter = child.offsetLeft + CARD_W / 2 + offsetRef.current;
+      const dist = Math.abs(childCenter - center);
+      const maxDist = containerWidth / 2;
+      const t = Math.min(dist / maxDist, 1);
+      // scale: 1 at center → 0.75 at edges
+      const scale = 1 - t * 0.25;
+      // opacity: 1 at center → 0.4 at edges
+      const opacity = 1 - t * 0.6;
+      // slight brightness dim
+      const brightness = 1 - t * 0.3;
+      child.style.transform = `scale(${scale})`;
+      child.style.opacity = `${opacity}`;
+      child.style.filter = `brightness(${brightness})`;
+    }
+  }, [containerWidth]);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
-    isDragging.current = true;
-    setDragOffset(0);
-  };
+  useEffect(() => {
+    if (images.length === 0 || containerWidth === 0) return;
+    const totalWidth = images.length * STEP;
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current) return;
-    const delta = e.touches[0].clientX - touchStartX.current;
-    // Dampen the drag so it feels elastic
-    setDragOffset(delta * 0.4);
-  };
+    const animate = () => {
+      offsetRef.current -= SPEED;
+      if (Math.abs(offsetRef.current) >= totalWidth) {
+        offsetRef.current += totalWidth;
+      }
+      if (trackRef.current) {
+        trackRef.current.style.transform = `translateX(${offsetRef.current}px)`;
+      }
+      applyTransforms();
+      rafRef.current = requestAnimationFrame(animate);
+    };
 
-  const handleTouchEnd = () => {
-    isDragging.current = false;
-    const d = dragOffset;
-    setDragOffset(0);
-    if (d < -20) next();
-    else if (d > 20) prev();
-  };
+    rafRef.current = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [images, containerWidth, applyTransforms]);
 
   if (images.length === 0) return null;
 
-  const getIndex = (offset: number) =>
-    (current + offset + images.length) % images.length;
-
-  const slots = [
-    { offset: -2, xBase: -1.3 * CARD_W, scale: 0.45, z: 0, opacity: 0.25 },
-    { offset: -1, xBase: -0.65 * CARD_W, scale: 0.7, z: 1, opacity: 0.6 },
-    { offset: 0, xBase: 0, scale: 1, z: 2, opacity: 1 },
-    { offset: 1, xBase: 0.65 * CARD_W, scale: 0.7, z: 1, opacity: 0.6 },
-    { offset: 2, xBase: 1.3 * CARD_W, scale: 0.45, z: 0, opacity: 0.25 },
-  ];
+  // Triple the images for seamless infinite loop
+  const tripled = [...images, ...images, ...images];
 
   return (
-    <div
-      className="w-full h-full relative overflow-hidden"
-      style={{ touchAction: "pan-y" }}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
-      <div className="absolute inset-0 flex items-center justify-center">
-        {slots.map((slot) => {
-          const idx = getIndex(slot.offset);
-          return (
-            <motion.div
-              key={`slot-${slot.offset}`}
-              className="absolute"
-              style={{ zIndex: slot.z }}
-              animate={{
-                x: slot.xBase + dragOffset,
-                scale: slot.scale,
-                opacity: slot.opacity,
-              }}
-              transition={
-                isDragging.current
-                  ? { type: "tween", duration: 0.05 }
-                  : { type: "spring", stiffness: 300, damping: 30 }
-              }
-            >
-              <div
-                className="rounded-2xl overflow-hidden"
-                style={{
-                  width: CARD_W,
-                  height: CARD_H,
-                  boxShadow:
-                    slot.offset === 0
-                      ? "0 0 30px hsl(340 80% 60% / 0.5), 0 10px 40px hsl(340 60% 40% / 0.3)"
-                      : "0 4px 15px hsl(0 0% 0% / 0.15)",
-                  border:
-                    slot.offset === 0
-                      ? "2px solid hsl(340, 70%, 75%)"
-                      : "1px solid hsl(340, 30%, 80% / 0.2)",
-                }}
-              >
-                <img
-                  src={images[idx]}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
-              </div>
-            </motion.div>
-          );
-        })}
+    <div ref={containerRef} className="w-full h-full relative overflow-hidden">
+      <div
+        ref={trackRef}
+        className="flex items-center h-full absolute left-0 top-0"
+        style={{ gap: CARD_GAP, willChange: "transform" }}
+      >
+        {tripled.map((url, i) => (
+          <div
+            key={i}
+            className="flex-shrink-0 rounded-2xl overflow-hidden"
+            style={{
+              width: CARD_W,
+              height: 280,
+              transition: "transform 0.1s linear, opacity 0.1s linear, filter 0.1s linear",
+              boxShadow: "0 8px 30px hsl(340 60% 40% / 0.2)",
+              border: "2px solid hsl(340, 70%, 80% / 0.4)",
+            }}
+          >
+            <img
+              src={url}
+              alt=""
+              className="w-full h-full object-cover"
+              draggable={false}
+              loading="lazy"
+            />
+          </div>
+        ))}
       </div>
     </div>
   );
