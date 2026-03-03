@@ -98,23 +98,29 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     detect();
   }, []);
 
-  // Smoke-relight phase: show smoke + "Oops", relight flame, then resume listening
+  // Smoke-relight phase: show smoke + message, relight visibly, then resume listening
   useEffect(() => {
     if (phase !== "smoke-relight") return;
-    // After 1.5s, relight the flame
-    const relightTimer = setTimeout(() => {
-      setFlameIntensity(1);
-    }, 1500);
-    // After 2.8s, resume listening and reset cooldown
+
+    setFlameIntensity(0);
+
+    const relightStep1 = setTimeout(() => setFlameIntensity(0.45), 350);
+    const relightStep2 = setTimeout(() => setFlameIntensity(0.8), 650);
+    const relightStep3 = setTimeout(() => setFlameIntensity(1), 900);
+
+    // Resume listening after relight is clearly visible
     const resumeTimer = setTimeout(() => {
       blowCooldownRef.current = false;
       setPhase("listening");
       if (analyserRef.current && streamRef.current && audioContextRef.current) {
         startDetection(analyserRef.current, streamRef.current, audioContextRef.current);
       }
-    }, 3200);
+    }, 1800);
+
     return () => {
-      clearTimeout(relightTimer);
+      clearTimeout(relightStep1);
+      clearTimeout(relightStep2);
+      clearTimeout(relightStep3);
       clearTimeout(resumeTimer);
     };
   }, [phase, startDetection]);
