@@ -12,9 +12,12 @@ interface MusicContextType {
   toggle: () => void;
   next: () => void;
   prev: () => void;
+  seek: (time: number) => void;
   isPlaying: boolean;
   trackTitle: string;
   analyserNode: AnalyserNode | null;
+  currentTime: number;
+  duration: number;
 }
 
 const MusicContext = createContext<MusicContextType>({
@@ -24,9 +27,12 @@ const MusicContext = createContext<MusicContextType>({
   toggle: () => {},
   next: () => {},
   prev: () => {},
+  seek: () => {},
   isPlaying: false,
   trackTitle: "",
   analyserNode: null,
+  currentTime: 0,
+  duration: 0,
 });
 
 export const useMusic = () => useContext(MusicContext);
@@ -37,6 +43,8 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   const startedRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [trackIndex, setTrackIndex] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -65,8 +73,10 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     audioRef.current = audio;
     audio.addEventListener("play", () => setIsPlaying(true));
     audio.addEventListener("pause", () => setIsPlaying(false));
+    audio.addEventListener("timeupdate", () => setCurrentTime(audio.currentTime));
+    audio.addEventListener("durationchange", () => setDuration(audio.duration || 0));
+    audio.addEventListener("loadedmetadata", () => setDuration(audio.duration || 0));
     audio.addEventListener("ended", () => {
-      // auto-next
       setTrackIndex((prev) => {
         const next = (prev + 1) % TRACKS.length;
         loadTrack(next);
@@ -149,8 +159,13 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     });
   }, [loadTrack]);
 
+  const seek = useCallback((time: number) => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = time;
+  }, []);
+
   return (
-    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, next, prev, isPlaying, trackTitle: TRACKS[trackIndex].title, analyserNode }}>
+    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, next, prev, seek, isPlaying, trackTitle: TRACKS[trackIndex].title, analyserNode, currentTime, duration }}>
       {children}
     </MusicContext.Provider>
   );
