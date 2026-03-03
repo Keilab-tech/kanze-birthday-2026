@@ -92,18 +92,26 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     detect();
   }, []);
 
-  // Smoke-relight phase: show smoke + "Oops" then relight after 2s
+  // Smoke-relight phase: show smoke + "Oops", relight flame gradually, then resume listening
   useEffect(() => {
     if (phase !== "smoke-relight") return;
-    const t = setTimeout(() => {
-      setFlameIntensity(1);
+    // After 1.2s, start relighting the flame
+    const relightTimer = setTimeout(() => {
+      setFlameIntensity(0.3);
+      setTimeout(() => setFlameIntensity(0.6), 300);
+      setTimeout(() => setFlameIntensity(1), 600);
+    }, 1200);
+    // After 2.5s total, resume listening
+    const resumeTimer = setTimeout(() => {
       setPhase("listening");
-      // Resume detection
       if (analyserRef.current && streamRef.current && audioContextRef.current) {
         startDetection(analyserRef.current, streamRef.current, audioContextRef.current);
       }
-    }, 2000);
-    return () => clearTimeout(t);
+    }, 2500);
+    return () => {
+      clearTimeout(relightTimer);
+      clearTimeout(resumeTimer);
+    };
   }, [phase, startDetection]);
 
   // Post-blow → fireworks
@@ -138,6 +146,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   }, []);
 
   const showCandle = ["candle", "wish", "waiting", "listening", "smoke-relight"].includes(phase);
+  const showFlame = phase !== "smoke-relight" || flameIntensity > 0;
 
   return (
     <div
@@ -320,8 +329,8 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             style={{ transform: "translateX(-50%)" }}
           >
             {/* Flame — 🔥 emoji */}
-            <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.15s ease" }}>
-              {flameIntensity > 0 && (
+            <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.3s ease" }}>
+              {showFlame && flameIntensity > 0 && (
                 <>
                   {/* Outer magical glow pulse */}
                   <div
