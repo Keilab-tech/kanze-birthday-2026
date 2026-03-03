@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { MusicProvider } from "@/contexts/MusicContext";
-import MusicToggle from "@/components/MusicToggle";
+
 import Index from "./pages/Index";
 import MemoryHub from "./components/MemoryHub";
 import GalleryPage from "./pages/GalleryPage";
@@ -40,7 +40,7 @@ const App = () => (
       <MusicProvider>
         <BrowserRouter>
           <RefreshGuard>
-            <MusicToggle />
+            
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/hub" element={<MemoryHub />} />
