@@ -104,6 +104,16 @@ const PhotoSlider = () => {
                 ease: [0.25, 0.1, 0.25, 1],
               }}
             >
+              {/* Crown on center card only */}
+              {slot.offset === 0 && (
+                <img
+                  src="/images/crown-nobg.png"
+                  alt="Crown"
+                  className="absolute -top-8 left-1/2 w-20 h-auto pointer-events-none"
+                  style={{ transform: "translateX(-50%)", zIndex: 10 }}
+                  draggable={false}
+                />
+              )}
               <div
                 className="rounded-2xl overflow-hidden"
                 style={{
