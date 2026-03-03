@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
 import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
@@ -17,10 +18,10 @@ const MemoryHub = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-princess-gradient relative overflow-hidden">
+    <div className="min-h-screen bg-princess-gradient relative overflow-x-hidden overflow-y-auto">
       <PinkParticlesBackground />
 
-      <div className="relative z-10 flex flex-col items-center min-h-screen px-6">
+      <div className="relative z-10 flex flex-col items-center px-6 pb-16">
         {/* Photo Slider — fills top half */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -30,6 +31,21 @@ const MemoryHub = () => {
           style={{ height: "50vh" }}
         >
           <PhotoSlider />
+        </motion.div>
+
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.8 }}
+          className="my-3"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown size={22} style={{ color: "hsl(340, 60%, 65%)" }} />
+          </motion.div>
         </motion.div>
 
         <motion.h1
