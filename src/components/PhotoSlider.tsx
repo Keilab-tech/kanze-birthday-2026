@@ -9,7 +9,7 @@ const PhotoSlider = () => {
   const [current, setCurrent] = useState(0);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
-  const autoTimerRef = useRef<ReturnType<typeof setInterval>>();
+  
 
   useEffect(() => {
     const load = async () => {
@@ -41,17 +41,6 @@ const PhotoSlider = () => {
     setCurrent(prev => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  const resetAutoSlide = useCallback(() => {
-    if (autoTimerRef.current) clearInterval(autoTimerRef.current);
-    autoTimerRef.current = setInterval(next, 2000);
-  }, [next]);
-
-  // Auto-slide every 2s
-  useEffect(() => {
-    if (images.length <= 1) return;
-    resetAutoSlide();
-    return () => { if (autoTimerRef.current) clearInterval(autoTimerRef.current); };
-  }, [resetAutoSlide, images.length]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
@@ -65,10 +54,8 @@ const PhotoSlider = () => {
   const handleTouchEnd = () => {
     if (touchDelta.current < -SWIPE_THRESHOLD) {
       next();
-      resetAutoSlide();
     } else if (touchDelta.current > SWIPE_THRESHOLD) {
       prev();
-      resetAutoSlide();
     }
     touchDelta.current = 0;
   };
