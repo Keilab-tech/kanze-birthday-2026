@@ -342,13 +342,16 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             </div>
             {/* Wick */}
             <div className="w-1 h-4" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }} />
-            {/* Candle body */}
-            <div
-              className="w-24 h-72 rounded-t-md"
+            {/* Birthday Cake */}
+            <img
+              src="/images/cake-nobg.png"
+              alt="Birthday cake"
+              className="w-52 h-auto"
               style={{
-                background: "linear-gradient(to bottom, hsl(340, 60%, 85%), hsl(340, 50%, 75%))",
-                boxShadow: "0 4px 15px hsl(340 60% 50% / 0.2)",
+                marginTop: "-6px",
+                filter: "drop-shadow(0 8px 25px hsl(340 60% 50% / 0.4))",
               }}
+              draggable={false}
             />
           </motion.div>
         )}
