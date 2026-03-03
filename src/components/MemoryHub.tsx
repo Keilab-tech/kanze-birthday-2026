@@ -20,13 +20,14 @@ const MemoryHub = () => {
     <div className="min-h-screen bg-princess-gradient relative overflow-hidden">
       <PinkParticlesBackground />
 
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-12">
-        {/* Photo Slider */}
+      <div className="relative z-10 flex flex-col items-center min-h-screen px-6">
+        {/* Photo Slider — fills top half */}
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.8 }}
-          className="w-full max-w-sm mb-8"
+          className="w-full"
+          style={{ height: "50vh" }}
         >
           <PhotoSlider />
         </motion.div>
@@ -35,7 +36,7 @@ const MemoryHub = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, delay: 0.3 }}
-          className="text-4xl md:text-5xl text-primary mb-16"
+          className="text-4xl md:text-5xl text-primary mt-6 mb-10"
         >
           Your Memories
         </motion.h1>

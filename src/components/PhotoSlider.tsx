@@ -89,8 +89,7 @@ const PhotoSlider = () => {
 
   return (
     <div
-      className="w-full relative overflow-hidden touch-pan-y"
-      style={{ height: 280 }}
+      className="w-full h-full relative overflow-hidden touch-pan-y"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -116,8 +115,8 @@ const PhotoSlider = () => {
                 animate={{ opacity: 1 }}
                 className="rounded-2xl overflow-hidden"
                 style={{
-                  width: 180,
-                  height: 240,
+                  width: 220,
+                  height: "80%",
                   boxShadow:
                     pos.offset === 0
                       ? "0 0 30px hsl(340 80% 60% / 0.5), 0 10px 40px hsl(340 60% 40% / 0.3)"
