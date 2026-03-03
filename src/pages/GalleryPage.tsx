@@ -124,8 +124,19 @@ const GalleryPage = () => {
           className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
           onClick={() => setSelected(null)}
         >
+          {/* Close / Back button */}
+          <button
+            onClick={(e) => { e.stopPropagation(); setSelected(null); }}
+            className="absolute top-5 left-5 z-60 rounded-full w-10 h-10 flex items-center justify-center shadow-lg"
+            style={{
+              background: "hsl(340, 60%, 90%)",
+              color: "hsl(340, 40%, 35%)",
+            }}
+          >
+            ←
+          </button>
           {selected.isVideo ? (
-            <video src={selected.url} controls autoPlay className="max-w-full max-h-[85vh] rounded-2xl" />
+            <video src={selected.url} controls autoPlay className="max-w-full max-h-[85vh] rounded-2xl" onClick={e => e.stopPropagation()} />
           ) : (
             <motion.img
               initial={{ scale: 0.8 }}
@@ -133,6 +144,7 @@ const GalleryPage = () => {
               src={selected.url}
               alt={selected.name}
               className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl"
+              onClick={e => e.stopPropagation()}
             />
           )}
         </motion.div>
