@@ -2,13 +2,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import MemoryHub from "./components/MemoryHub";
 import GalleryPage from "./pages/GalleryPage";
 import MomentsPage from "./pages/MomentsPage";
 import LetterPage from "./pages/LetterPage";
-import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -24,7 +23,7 @@ const App = () => (
           <Route path="/gallery" element={<GalleryPage />} />
           <Route path="/moments" element={<MomentsPage />} />
           <Route path="/letter" element={<LetterPage />} />
-          <Route path="*" element={<NotFound />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </TooltipProvider>
