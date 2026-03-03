@@ -350,16 +350,22 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   <div style={{ fontSize: "1.8rem", filter: "grayscale(1) opacity(0.6)" }}>💨</div>
                 </motion.div>
               )}
-              {/* Cake image — original with mask to hide dark bg */}
+              {/* Cake image */}
               <img
                 src="/images/cake-final.png"
                 alt="Birthday cake"
                 className="w-full h-auto block"
                 style={{
-                  WebkitMaskImage: "radial-gradient(ellipse 75% 70% at 50% 55%, black 50%, transparent 85%)",
-                  maskImage: "radial-gradient(ellipse 75% 70% at 50% 55%, black 50%, transparent 85%)",
+                  ...(phase !== "blown" ? {
+                    WebkitMaskImage: "radial-gradient(ellipse 75% 70% at 50% 55%, black 50%, transparent 85%)",
+                    maskImage: "radial-gradient(ellipse 75% 70% at 50% 55%, black 50%, transparent 85%)",
+                  } : {
+                    WebkitMaskImage: "radial-gradient(ellipse 65% 60% at 50% 55%, black 40%, transparent 75%)",
+                    maskImage: "radial-gradient(ellipse 65% 60% at 50% 55%, black 40%, transparent 75%)",
+                  }),
                   filter: "none",
                   boxShadow: "none",
+                  transition: "all 0.8s ease",
                 }}
                 draggable={false}
               />
