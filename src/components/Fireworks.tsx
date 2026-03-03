@@ -39,8 +39,9 @@ const Fireworks = ({ onComplete }: FireworksProps) => {
     ];
 
     const createBurst = (x: number, y: number, count: number) => {
-      for (let i = 0; i < count; i++) {
-        const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.3;
+      const actual = Math.min(count, 30);
+      for (let i = 0; i < actual; i++) {
+        const angle = (Math.PI * 2 * i) / actual + (Math.random() - 0.5) * 0.3;
         const speed = Math.random() * 4 + 2;
         particles.push({
           x, y,
@@ -50,21 +51,18 @@ const Fireworks = ({ onComplete }: FireworksProps) => {
           color: colors[Math.floor(Math.random() * colors.length)],
           size: Math.random() * 2.5 + 1,
           life: 0,
-          decay: 0.012 + Math.random() * 0.008,
+          decay: 0.018 + Math.random() * 0.01,
         });
       }
     };
 
-    // Schedule multiple bursts
+    // Schedule multiple bursts — fewer for performance
     const bursts = [
       { time: 0, x: 0.5, y: 0.3 },
-      { time: 400, x: 0.3, y: 0.25 },
-      { time: 700, x: 0.7, y: 0.35 },
-      { time: 1200, x: 0.4, y: 0.2 },
-      { time: 1600, x: 0.6, y: 0.28 },
-      { time: 2200, x: 0.5, y: 0.3 },
-      { time: 2800, x: 0.35, y: 0.35 },
-      { time: 3200, x: 0.65, y: 0.25 },
+      { time: 500, x: 0.3, y: 0.25 },
+      { time: 1000, x: 0.7, y: 0.35 },
+      { time: 1800, x: 0.4, y: 0.2 },
+      { time: 2600, x: 0.6, y: 0.28 },
     ];
 
     const timeouts = bursts.map(b =>
@@ -96,8 +94,6 @@ const Fireworks = ({ onComplete }: FireworksProps) => {
         ctx.save();
         ctx.globalAlpha = p.alpha;
         ctx.fillStyle = p.color;
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 6;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
         ctx.fill();
