@@ -96,14 +96,11 @@ const PhotoSlider = () => {
               }}
               transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
             >
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+              <div
                 className="rounded-2xl overflow-hidden"
                 style={{
                   width: 220,
-                  height: "80%",
+                  height: 300,
                   boxShadow:
                     pos.offset === 0
                       ? "0 0 30px hsl(340 80% 60% / 0.5), 0 10px 40px hsl(340 60% 40% / 0.3)"
@@ -120,7 +117,7 @@ const PhotoSlider = () => {
                   className="w-full h-full object-cover"
                   draggable={false}
                 />
-              </motion.div>
+              </div>
             </motion.div>
           );
         })}
