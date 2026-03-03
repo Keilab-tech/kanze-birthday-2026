@@ -13,7 +13,7 @@ const formatTime = (s: number) => {
 };
 
 const MusicPlayerBar = () => {
-  const { toggle, isPlaying, next, prev, trackTitle, analyserNode, currentTime, duration, seek } = useMusic();
+  const { toggle, isPlaying, next, prev, trackTitle, analyserNode, currentTime, duration, seek, hasStarted } = useMusic();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
   const progressRef = useRef<HTMLDivElement>(null);
@@ -82,6 +82,8 @@ const MusicPlayerBar = () => {
   };
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  if (!hasStarted) return null;
 
   return (
     <AnimatePresence>

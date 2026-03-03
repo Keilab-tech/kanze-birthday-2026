@@ -14,6 +14,7 @@ interface MusicContextType {
   prev: () => void;
   seek: (time: number) => void;
   isPlaying: boolean;
+  hasStarted: boolean;
   trackTitle: string;
   analyserNode: AnalyserNode | null;
   currentTime: number;
@@ -29,6 +30,7 @@ const MusicContext = createContext<MusicContextType>({
   prev: () => {},
   seek: () => {},
   isPlaying: false,
+  hasStarted: false,
   trackTitle: "",
   analyserNode: null,
   currentTime: 0,
@@ -42,6 +44,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   const fadeIntervalRef = useRef<number>(0);
   const startedRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [trackIndex, setTrackIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -121,6 +124,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   const start = useCallback(() => {
     if (!audioRef.current || startedRef.current) return;
     startedRef.current = true;
+    setHasStarted(true);
     setupAnalyser();
     audioRef.current.volume = 0;
     audioRef.current.play().catch(() => {});
@@ -165,7 +169,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, next, prev, seek, isPlaying, trackTitle: TRACKS[trackIndex].title, analyserNode, currentTime, duration }}>
+    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, next, prev, seek, isPlaying, hasStarted, trackTitle: TRACKS[trackIndex].title, analyserNode, currentTime, duration }}>
       {children}
     </MusicContext.Provider>
   );
