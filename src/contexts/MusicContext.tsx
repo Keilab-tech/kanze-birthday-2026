@@ -1,11 +1,20 @@
 import { createContext, useContext, useRef, useCallback, useEffect, useState } from "react";
 
+const TRACKS = [
+  { src: "/audio/background-song.mp3", title: "Birthday Song" },
+  { src: "/audio/birkin-bag.mp3", title: "Birkin Bag" },
+];
+
 interface MusicContextType {
   start: () => void;
   fadeDown: () => void;
   fadeUp: () => void;
   toggle: () => void;
+  next: () => void;
+  prev: () => void;
   isPlaying: boolean;
+  trackTitle: string;
+  analyserNode: AnalyserNode | null;
 }
 
 const MusicContext = createContext<MusicContextType>({
@@ -13,7 +22,11 @@ const MusicContext = createContext<MusicContextType>({
   fadeDown: () => {},
   fadeUp: () => {},
   toggle: () => {},
+  next: () => {},
+  prev: () => {},
   isPlaying: false,
+  trackTitle: "",
+  analyserNode: null,
 });
 
 export const useMusic = () => useContext(MusicContext);
@@ -23,18 +36,58 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   const fadeIntervalRef = useRef<number>(0);
   const startedRef = useRef(false);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
+
+  const setupAnalyser = useCallback(() => {
+    if (!audioRef.current || audioCtxRef.current) return;
+    try {
+      const ctx = new AudioContext();
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64;
+      const source = ctx.createMediaElementSource(audioRef.current);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      analyserRef.current = analyser;
+      sourceRef.current = source;
+      setAnalyserNode(analyser);
+    } catch {}
+  }, []);
 
   useEffect(() => {
-    const audio = new Audio("/audio/background-song.mp3");
-    audio.loop = true;
+    const audio = new Audio(TRACKS[0].src);
+    audio.loop = false;
     audio.volume = 0;
     audioRef.current = audio;
     audio.addEventListener("play", () => setIsPlaying(true));
     audio.addEventListener("pause", () => setIsPlaying(false));
+    audio.addEventListener("ended", () => {
+      // auto-next
+      setTrackIndex((prev) => {
+        const next = (prev + 1) % TRACKS.length;
+        loadTrack(next);
+        return next;
+      });
+    });
     return () => {
       audio.pause();
       audio.src = "";
     };
+  }, []);
+
+  const loadTrack = useCallback((index: number) => {
+    if (!audioRef.current) return;
+    const wasPlaying = !audioRef.current.paused;
+    const vol = audioRef.current.volume;
+    audioRef.current.src = TRACKS[index].src;
+    audioRef.current.volume = vol;
+    if (wasPlaying || startedRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
   }, []);
 
   const fadeTo = useCallback((target: number, durationMs: number) => {
@@ -58,22 +111,19 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   const start = useCallback(() => {
     if (!audioRef.current || startedRef.current) return;
     startedRef.current = true;
+    setupAnalyser();
     audioRef.current.volume = 0;
     audioRef.current.play().catch(() => {});
     fadeTo(0.3, 2000);
     setTimeout(() => fadeTo(0.7, 4000), 3000);
-  }, [fadeTo]);
+  }, [fadeTo, setupAnalyser]);
 
-  const fadeDown = useCallback(() => {
-    fadeTo(0.08, 1500);
-  }, [fadeTo]);
-
-  const fadeUp = useCallback(() => {
-    fadeTo(0.7, 1200);
-  }, [fadeTo]);
+  const fadeDown = useCallback(() => { fadeTo(0.08, 1500); }, [fadeTo]);
+  const fadeUp = useCallback(() => { fadeTo(0.7, 1200); }, [fadeTo]);
 
   const toggle = useCallback(() => {
     if (!audioRef.current) return;
+    setupAnalyser();
     if (audioRef.current.paused) {
       audioRef.current.play().catch(() => {});
       fadeTo(0.7, 800);
@@ -81,10 +131,26 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
       fadeTo(0, 600);
       setTimeout(() => audioRef.current?.pause(), 600);
     }
-  }, [fadeTo]);
+  }, [fadeTo, setupAnalyser]);
+
+  const next = useCallback(() => {
+    setTrackIndex((prev) => {
+      const n = (prev + 1) % TRACKS.length;
+      loadTrack(n);
+      return n;
+    });
+  }, [loadTrack]);
+
+  const prev = useCallback(() => {
+    setTrackIndex((prev) => {
+      const n = (prev - 1 + TRACKS.length) % TRACKS.length;
+      loadTrack(n);
+      return n;
+    });
+  }, [loadTrack]);
 
   return (
-    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, isPlaying }}>
+    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, next, prev, isPlaying, trackTitle: TRACKS[trackIndex].title, analyserNode }}>
       {children}
     </MusicContext.Provider>
   );
