@@ -108,9 +108,9 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-end justify-end z-50 select-none overflow-hidden bg-candle-dark"
+      className="fixed inset-0 flex flex-col z-50 select-none overflow-hidden bg-candle-dark"
       onClick={phase === "waiting" ? startListening : undefined}
-      style={{ cursor: phase === "waiting" ? "pointer" : "default", alignItems: "center", paddingBottom: "15vh" }}
+      style={{ cursor: phase === "waiting" ? "pointer" : "default" }}
     >
       {/* Countdown Clock */}
       <CountdownClock />
@@ -145,70 +145,104 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
         </div>
       )}
 
-      {/* Fireworks phase */}
-      {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
+      {/* Centered content area */}
+      <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+        {/* Fireworks phase */}
+        {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
 
-      {/* Birthday text after fireworks */}
-      <AnimatePresence>
-        {phase === "birthday-text" && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.5 }}
-            className="text-center px-8 space-y-4"
-          >
-            <h1
-              className="text-5xl md:text-6xl text-glow-pink"
-              style={{ color: "hsl(340, 80%, 75%)" }}
+        {/* Birthday text after fireworks */}
+        <AnimatePresence>
+          {phase === "birthday-text" && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.5 }}
+              className="text-center px-8 space-y-4"
             >
-              Happy Birthday Kanze 💖
-            </h1>
+              <h1
+                className="text-5xl md:text-6xl text-glow-pink"
+                style={{ color: "hsl(340, 80%, 75%)" }}
+              >
+                Happy Birthday Kanze 💖
+              </h1>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.5, duration: 1 }}
+                className="text-xl"
+                style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Quicksand', sans-serif" }}
+              >
+                22 looks good on you.
+              </motion.p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Pre-blow text */}
+        <AnimatePresence>
+          {phase === "candle" && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2 }}
+              className="text-xl px-8 text-center"
+              style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Dancing Script', cursive", fontSize: "1.5rem" }}
+            >
+              Before Chapter 22 begins...
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {phase === "wish" && (
+            <motion.p
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1.2 }}
+              className="text-xl px-8 text-center"
+              style={{ color: "hsl(340, 60%, 85%)", fontFamily: "'Dancing Script', cursive", fontSize: "1.8rem" }}
+            >
+              Make a wish.
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        {/* Tap / Blow hints */}
+        <AnimatePresence>
+          {phase === "waiting" && (
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 1.5, duration: 1 }}
-              className="text-xl"
-              style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Quicksand', sans-serif" }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mt-8 text-sm tracking-wider"
+              style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
             >
-              22 looks good on you.
+              Tap to begin ✨
             </motion.p>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {/* Pre-blow text */}
-      <AnimatePresence>
-        {phase === "candle" && (
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2 }}
-            className="text-xl mb-12 px-8 text-center"
-            style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Dancing Script', cursive", fontSize: "1.5rem" }}
-          >
-            Before Chapter 22 begins...
-          </motion.p>
-        )}
-      </AnimatePresence>
+        <AnimatePresence>
+          {phase === "listening" && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mt-8 text-sm tracking-wider"
+              style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
+            >
+              Blow gently... 🌬️
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
 
-      <AnimatePresence>
-        {phase === "wish" && (
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.2 }}
-            className="text-xl mb-12 px-8 text-center"
-            style={{ color: "hsl(340, 60%, 85%)", fontFamily: "'Dancing Script', cursive", fontSize: "1.8rem" }}
-          >
-            Make a wish.
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      {/* Candle */}
+      {/* Candle — pinned to bottom center */}
       <AnimatePresence>
         {showCandle && (
           <motion.div
@@ -216,10 +250,11 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="relative flex flex-col items-center"
+            className="absolute bottom-0 left-1/2 flex flex-col items-center"
+            style={{ transform: "translateX(-50%)" }}
           >
-            {/* Flame */}
-            <div className="relative mb-0.5" style={{ opacity: flameIntensity, transition: "opacity 0.15s ease" }}>
+            {/* Flame — 🔥 emoji */}
+            <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.15s ease" }}>
               {flameIntensity > 0 && (
                 <>
                   {/* Outer magical glow pulse */}
@@ -238,70 +273,35 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                       animation: "flame-pulse 1.8s ease-in-out infinite 0.4s",
                     }}
                   />
-                  {/* Flame */}
+                  {/* Fire emoji flame */}
                   <div
-                    className="w-6 h-14 rounded-full animate-flicker"
+                    className="animate-flicker text-center"
                     style={{
-                      background: "linear-gradient(to top, hsl(30, 80%, 50%), hsl(40, 90%, 65%), hsl(45, 95%, 90%))",
+                      fontSize: "2.8rem",
                       transform: `scaleY(${flameIntensity})`,
                       transition: "transform 0.15s ease",
-                      filter: "blur(0.3px)",
+                      lineHeight: 1,
                     }}
-                  />
+                  >
+                    🔥
+                  </div>
                 </>
               )}
             </div>
             {/* Wick */}
-            <div className="w-0.5 h-3" style={{ backgroundColor: "hsl(0, 0%, 40%)" }} />
+            <div className="w-0.5 h-2" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-4px" }} />
             {/* Candle body */}
             <div
-              className="w-12 h-36 rounded-md"
+              className="w-12 h-36 rounded-t-md"
               style={{
                 background: "linear-gradient(to bottom, hsl(340, 60%, 85%), hsl(340, 50%, 75%))",
                 boxShadow: "0 4px 15px hsl(340 60% 50% / 0.2)",
-              }}
-            />
-            {/* Candle base */}
-            <div
-              className="w-16 h-4 rounded-b-lg"
-              style={{
-                background: "linear-gradient(to bottom, hsl(340, 40%, 70%), hsl(340, 35%, 60%))",
               }}
             />
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Tap hint */}
-      <AnimatePresence>
-        {phase === "waiting" && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mt-12 text-sm tracking-wider"
-            style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
-          >
-            Tap to begin ✨
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {phase === "listening" && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.7 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="mt-12 text-sm tracking-wider"
-            style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
-          >
-            Blow gently... 🌬️
-          </motion.p>
-        )}
-      </AnimatePresence>
     </div>
   );
 };
