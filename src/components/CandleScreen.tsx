@@ -125,7 +125,8 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   // Post-blow → fireworks
   useEffect(() => {
     if (phase !== "blown") return;
-    const t = setTimeout(() => setPhase("fireworks"), 1500);
+    setFlameIntensity(0);
+    const t = setTimeout(() => setPhase("fireworks"), 3000);
     return () => clearTimeout(t);
   }, [phase]);
 
@@ -153,7 +154,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     };
   }, []);
 
-  const showCandle = ["candle", "wish", "waiting", "listening", "smoke-relight"].includes(phase);
+  const showCandle = ["candle", "wish", "waiting", "listening", "smoke-relight", "blown"].includes(phase);
 
   return (
     <div
