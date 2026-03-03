@@ -294,7 +294,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
         </AnimatePresence>
       </div>
 
-      {/* Candle — pinned to bottom center */}
+      {/* Cake + Candle — pinned to bottom center */}
       <AnimatePresence>
         {showCandle && (
           <motion.div
@@ -302,14 +302,13 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="absolute bottom-0 left-1/2 flex flex-col items-center"
-            style={{ transform: "translateX(-50%)" }}
+            className="absolute left-1/2 flex flex-col items-center"
+            style={{ transform: "translateX(-50%)", bottom: "-30px" }}
           >
-            {/* Flame — 🔥 emoji */}
+            {/* Flame — 🔥 emoji, positioned above cake */}
             <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.3s ease" }}>
               {flameIntensity > 0 && (
                 <>
-                  {/* Outer magical glow pulse */}
                   <div
                     className="absolute -inset-14 rounded-full"
                     style={{
@@ -317,7 +316,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                       animation: "flame-pulse 2.5s ease-in-out infinite",
                     }}
                   />
-                  {/* Inner warm glow pulse */}
                   <div
                     className="absolute -inset-8 rounded-full"
                     style={{
@@ -325,7 +323,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                       animation: "flame-pulse 1.8s ease-in-out infinite 0.4s",
                     }}
                   />
-                  {/* Fire emoji flame */}
                   <div
                     className="animate-flicker text-center"
                     style={{
@@ -342,12 +339,16 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             </div>
             {/* Wick */}
             <div className="w-1 h-4" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }} />
-            {/* Birthday Cake */}
+            {/* Birthday Cake — larger, with screen blend to hide black bg */}
             <img
-              src="/images/cake-dark2.png"
+              src="/images/cake-final.png"
               alt="Birthday cake"
-              className="w-52 h-auto"
-              style={{ marginTop: "-6px" }}
+              className="w-96 h-auto"
+              style={{
+                marginTop: "-6px",
+                WebkitMaskImage: "radial-gradient(ellipse 60% 55% at 50% 45%, black 55%, transparent 90%)",
+                maskImage: "radial-gradient(ellipse 60% 55% at 50% 45%, black 55%, transparent 90%)",
+              }}
               draggable={false}
             />
           </motion.div>
