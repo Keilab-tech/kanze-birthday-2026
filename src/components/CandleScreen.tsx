@@ -310,7 +310,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                 className="text-lg mt-2"
                 style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Dancing Script', cursive" }}
               >
-                Oops, try that again! 😄
+                {blowCountRef.current === 1 ? "Oops, try that again! 😄" : "One last time! 🌬️"}
               </motion.p>
             </motion.div>
           )}
