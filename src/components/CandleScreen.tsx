@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import CountdownClock from "./CountdownClock";
+
 import Fireworks from "./Fireworks";
 import { useMusic } from "@/contexts/MusicContext";
 
@@ -164,8 +164,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       onClick={phase === "waiting" ? startListening : undefined}
       style={{ cursor: phase === "waiting" ? "pointer" : "default" }}
     >
-      {/* Countdown Clock */}
-      <CountdownClock />
 
 
 

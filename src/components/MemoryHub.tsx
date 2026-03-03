@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
+import BirthdayCountdown from "./BirthdayCountdown";
 
 const glowButtonStyle = {
   background: "linear-gradient(135deg, hsl(340, 80%, 70%), hsl(350, 75%, 65%))",
@@ -77,6 +78,11 @@ const MemoryHub = () => {
         >
           <MusicPlayerBar />
         </motion.div>
+
+        {/* Birthday countdown */}
+        <div className="mt-8">
+          <BirthdayCountdown />
+        </div>
       </div>
     </div>
   );
