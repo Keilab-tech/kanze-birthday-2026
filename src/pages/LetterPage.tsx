@@ -27,6 +27,23 @@ const letterLines = [
   "I'm grateful it gave me you.",
 ];
 
+// Group lines into paragraphs (split by empty lines)
+const getParagraphs = () => {
+  const paragraphs: { startLine: number; endLine: number }[] = [];
+  let start = 0;
+  for (let i = 0; i <= letterLines.length; i++) {
+    if (i === letterLines.length || letterLines[i] === "") {
+      if (i > start) {
+        paragraphs.push({ startLine: start, endLine: i - 1 });
+      }
+      start = i + 1;
+    }
+  }
+  return paragraphs;
+};
+
+const paragraphs = getParagraphs();
+
 interface VoiceNote {
   name: string;
   url: string;
@@ -42,17 +59,43 @@ const LetterPage = () => {
   const [showStars, setShowStars] = useState(false);
   const { fadeDown, fadeUp } = useMusic();
 
-  // Fade music down on mount, restore on unmount
   useEffect(() => {
     fadeDown();
     return () => { fadeUp(); };
   }, [fadeDown, fadeUp]);
 
-  // Flatten all text into a single string for char-by-char typing
   const fullText = letterLines.join("\n");
   const totalChars = fullText.length;
 
-  // Load voice notes
+  // Calculate which paragraph index each char position belongs to
+  const getCompletedParagraphs = () => {
+    const completed: number[] = [];
+    let charCount = 0;
+    for (let i = 0; i < letterLines.length; i++) {
+      charCount += letterLines[i].length + 1; // +1 for newline
+    }
+    // Check each paragraph
+    let pos = 0;
+    for (let li = 0; li < letterLines.length; li++) {
+      pos += letterLines[li].length + 1;
+    }
+    // Simpler: check if visibleChars has passed the end of each paragraph
+    let cumulativeEnd = 0;
+    paragraphs.forEach((p, idx) => {
+      for (let li = 0; li <= p.endLine; li++) {
+        // Calculate end position
+      }
+      let endPos = 0;
+      for (let li = 0; li <= p.endLine; li++) {
+        endPos += letterLines[li].length + 1;
+      }
+      if (visibleChars >= endPos) {
+        completed.push(idx);
+      }
+    });
+    return completed;
+  };
+
   useEffect(() => {
     const loadVoiceNotes = async () => {
       const { data } = await supabase.storage
@@ -74,24 +117,21 @@ const LetterPage = () => {
     loadVoiceNotes();
   }, []);
 
-  // Realistic keyboard click using noise burst
   const playKeyClick = useCallback(() => {
     try {
       if (!typeAudioCtxRef.current) {
         typeAudioCtxRef.current = new AudioContext();
       }
       const ctx = typeAudioCtxRef.current;
-      const bufferSize = ctx.sampleRate * 0.025; // 25ms
+      const bufferSize = ctx.sampleRate * 0.025;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const output = buffer.getChannelData(0);
-      // White noise burst shaped like a key click
       for (let i = 0; i < bufferSize; i++) {
         const env = Math.exp(-i / (bufferSize * 0.15));
         output[i] = (Math.random() * 2 - 1) * env * 0.3;
       }
       const source = ctx.createBufferSource();
       source.buffer = buffer;
-      // Bandpass to sound like a keyboard
       const filter = ctx.createBiquadFilter();
       filter.type = "bandpass";
       filter.frequency.value = 2000 + Math.random() * 1500;
@@ -105,7 +145,6 @@ const LetterPage = () => {
     } catch {}
   }, []);
 
-  // Character-by-character typewriter
   useEffect(() => {
     if (visibleChars >= totalChars) {
       setTimeout(() => setShowStars(true), 1000);
@@ -113,7 +152,6 @@ const LetterPage = () => {
     }
     const currentChar = fullText[visibleChars];
     const isNewline = currentChar === "\n";
-    // Slower speed: 45-75ms per char, longer pause for newlines
     const delay = isNewline ? 200 : (45 + Math.random() * 30);
     const t = setTimeout(() => {
       if (!isNewline && currentChar !== " ") playKeyClick();
@@ -137,7 +175,6 @@ const LetterPage = () => {
     setPlayingNote(note.name);
   };
 
-  // Determine which lines get voice note dots
   const voiceNoteLines = [2, 5, 10, 14].filter(i => i < voiceNotes.length + 2);
 
   return (
@@ -153,9 +190,9 @@ const LetterPage = () => {
             if (audioRef.current) audioRef.current.pause();
             navigate("/hub");
           }}
-          className="fixed top-4 left-4 z-30 rounded-full w-10 h-10 flex items-center justify-center shadow-md"
+          className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center shadow-sm"
           style={{
-            background: "hsl(340, 60%, 90%)",
+            background: "hsl(340, 60%, 92%)",
             color: "hsl(340, 40%, 35%)",
           }}
         >
@@ -170,26 +207,30 @@ const LetterPage = () => {
               const isTitle = i === 0;
               const voiceNoteIndex = voiceNoteLines.indexOf(i);
               const hasVoiceNote = voiceNoteIndex !== -1 && voiceNoteIndex < voiceNotes.length;
-              // Only show completed lines (line is complete if we've passed its newline)
               const lineComplete = i < visibleLineTexts.length - 1;
 
               if (letterLines[i] === "" && lineComplete) {
-                return <div key={i} className="h-4" />;
+                return <div key={i} className="h-5" />;
               }
               if (lineText === "" && !lineComplete) {
                 return null;
               }
 
               return (
-                <div key={i} className="flex items-start gap-2">
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.4 }}
+                  className="flex items-start gap-2"
+                >
                   <p
-                    className={isTitle ? "text-2xl text-primary mb-4" : "text-base leading-relaxed text-foreground/80"}
+                    className={isTitle ? "text-2xl text-primary mb-4" : "text-base leading-[1.9] text-foreground/90"}
                     style={{
                       fontFamily: isTitle ? "'Dancing Script', cursive" : "'Quicksand', sans-serif",
                     }}
                   >
                     {lineText}
-                    {/* Blinking cursor on the current line */}
                     {!lineComplete && (
                       <span
                         className="inline-block w-0.5 h-5 ml-0.5 align-middle"
@@ -208,9 +249,6 @@ const LetterPage = () => {
                         background: playingNote === voiceNotes[voiceNoteIndex].name
                           ? "hsl(340, 80%, 65%)"
                           : "hsl(340, 60%, 80%)",
-                        boxShadow: playingNote === voiceNotes[voiceNoteIndex].name
-                          ? "0 0 10px hsl(340, 80%, 65%, 0.5)"
-                          : "none",
                       }}
                     >
                       <span className="text-white text-[8px]">
@@ -218,22 +256,44 @@ const LetterPage = () => {
                       </span>
                     </button>
                   )}
-                </div>
+                </motion.div>
               );
             });
           })()}
         </div>
 
-        {/* Stars forming "Kanze" */}
+        {/* Sparkle stars at the end */}
         {showStars && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.15 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.5 }}
+            className="mt-6 flex justify-center gap-3"
+          >
+            {["✨", "⭐", "✨"].map((star, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, scale: 0 }}
+                animate={{ opacity: [0, 1, 0.6], scale: [0, 1.2, 1] }}
+                transition={{ duration: 1.2, delay: i * 0.3 }}
+                className="text-lg"
+              >
+                {star}
+              </motion.span>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Background name watermark */}
+        {showStars && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 0.08 }}
             transition={{ duration: 3 }}
             className="fixed inset-0 flex items-center justify-center pointer-events-none z-0"
           >
             <span
-              className="text-[120px] md:text-[180px] text-glow-pink"
+              className="text-[120px] md:text-[180px]"
               style={{
                 fontFamily: "'Dancing Script', cursive",
                 color: "hsl(340, 80%, 75%)",

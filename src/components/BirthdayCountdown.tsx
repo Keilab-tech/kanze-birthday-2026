@@ -34,10 +34,10 @@ const BirthdayCountdown = () => {
   const units = isPast
     ? []
     : [
-        { label: "Days", value: time.days },
-        { label: "Hrs", value: time.hours },
-        { label: "Min", value: time.minutes },
-        { label: "Sec", value: time.seconds },
+        { label: "DAYS", value: time.days },
+        { label: "HRS", value: time.hours },
+        { label: "MIN", value: time.minutes },
+        { label: "SEC", value: time.seconds },
       ];
 
   return (
@@ -45,11 +45,11 @@ const BirthdayCountdown = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8, delay: 1.8 }}
-      className="flex flex-col items-center gap-2"
+      className="flex flex-col items-center gap-3"
     >
       <span
-        className="text-xs tracking-widest uppercase"
-        style={{ color: "hsl(340, 60%, 55%)", fontFamily: "'Quicksand', sans-serif" }}
+        className="text-[10px] tracking-[0.25em] uppercase"
+        style={{ color: "hsl(340, 45%, 60%)", fontFamily: "'Quicksand', sans-serif" }}
       >
         Countdown to 21 🎂
       </span>
@@ -62,25 +62,25 @@ const BirthdayCountdown = () => {
           Happy 21st Birthday! 🎉
         </span>
       ) : (
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           {units.map((u) => (
             <div key={u.label} className="flex flex-col items-center">
               <div
-                className="rounded-xl w-14 h-14 flex items-center justify-center text-lg font-bold tabular-nums"
+                className="rounded-xl w-14 h-14 flex items-center justify-center text-xl font-extrabold tabular-nums"
                 style={{
-                  background: "hsl(340, 25%, 15%)",
-                  color: "hsl(340, 80%, 75%)",
-                  boxShadow:
-                    "0 0 15px hsl(340 80% 60% / 0.3), 0 0 30px hsl(280 60% 50% / 0.15), inset 0 1px 0 hsl(340 40% 25%)",
-                  border: "1px solid hsl(340, 40%, 25%)",
-                  fontFamily: "monospace",
+                  background: "hsl(340, 20%, 18% / 0.6)",
+                  color: "hsl(340, 70%, 80%)",
+                  boxShadow: "inset 0 1px 3px hsl(340 30% 10% / 0.3), 0 1px 2px hsl(0 0% 100% / 0.05)",
+                  border: "1px solid hsl(340, 25%, 30% / 0.4)",
+                  fontFamily: "'SF Mono', 'Fira Code', monospace",
+                  backdropFilter: "blur(8px)",
                 }}
               >
                 {pad(u.value)}
               </div>
               <span
-                className="text-[9px] mt-1 uppercase tracking-wider"
-                style={{ color: "hsl(340, 50%, 55%)" }}
+                className="text-[7px] mt-1.5 uppercase tracking-[0.2em] font-light"
+                style={{ color: "hsl(340, 35%, 55% / 0.7)" }}
               >
                 {u.label}
               </span>
