@@ -10,6 +10,7 @@ const glowButtonStyle = {
   color: "white",
   boxShadow:
     "0 0 15px hsl(340 80% 60% / 0.5), 0 0 30px hsl(280 60% 60% / 0.25), 0 6px 25px hsl(340 80% 60% / 0.35)",
+  animation: "pulseGlow 2s ease-in-out infinite",
 };
 
 const MemoryHub = () => {
