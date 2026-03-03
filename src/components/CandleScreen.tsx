@@ -108,27 +108,38 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col items-center justify-center z-50 select-none overflow-hidden bg-candle-dark"
+      className="fixed inset-0 flex flex-col items-end justify-end z-50 select-none overflow-hidden bg-candle-dark"
       onClick={phase === "waiting" ? startListening : undefined}
-      style={{ cursor: phase === "waiting" ? "pointer" : "default" }}
+      style={{ cursor: phase === "waiting" ? "pointer" : "default", alignItems: "center", paddingBottom: "15vh" }}
     >
       {/* Countdown Clock */}
       <CountdownClock />
 
-      {/* Subtle floating balloons */}
+      {/* Floating balloons — bigger and more realistic */}
       {showCandle && (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {[...Array(5)].map((_, i) => (
+          {[
+            { emoji: "🎈", left: 8, dur: 14, delay: 0, size: "3rem" },
+            { emoji: "🎈", left: 25, dur: 18, delay: 3, size: "3.5rem" },
+            { emoji: "🎈", left: 45, dur: 13, delay: 1, size: "2.8rem" },
+            { emoji: "🎈", left: 62, dur: 16, delay: 4, size: "3.2rem" },
+            { emoji: "🎈", left: 78, dur: 20, delay: 2, size: "3.8rem" },
+            { emoji: "🎈", left: 90, dur: 15, delay: 5, size: "2.5rem" },
+            { emoji: "🎈", left: 35, dur: 22, delay: 6, size: "3rem" },
+          ].map((b, i) => (
             <div
               key={i}
-              className="absolute text-2xl opacity-20"
+              className="absolute"
               style={{
-                left: `${15 + i * 18}%`,
-                animation: `balloon-float ${12 + i * 3}s ease-in-out infinite`,
-                animationDelay: `${i * 2}s`,
+                left: `${b.left}%`,
+                fontSize: b.size,
+                opacity: 0.3,
+                animation: `balloon-float ${b.dur}s ease-in-out infinite`,
+                animationDelay: `${b.delay}s`,
+                filter: "drop-shadow(0 2px 6px hsl(340 60% 50% / 0.15))",
               }}
             >
-              🎈
+              {b.emoji}
             </div>
           ))}
         </div>
@@ -229,7 +240,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   />
                   {/* Flame */}
                   <div
-                    className="w-4 h-9 rounded-full animate-flicker"
+                    className="w-6 h-14 rounded-full animate-flicker"
                     style={{
                       background: "linear-gradient(to top, hsl(30, 80%, 50%), hsl(40, 90%, 65%), hsl(45, 95%, 90%))",
                       transform: `scaleY(${flameIntensity})`,
@@ -241,10 +252,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
               )}
             </div>
             {/* Wick */}
-            <div className="w-0.5 h-2" style={{ backgroundColor: "hsl(0, 0%, 40%)" }} />
+            <div className="w-0.5 h-3" style={{ backgroundColor: "hsl(0, 0%, 40%)" }} />
             {/* Candle body */}
             <div
-              className="w-8 h-24 rounded-md"
+              className="w-12 h-36 rounded-md"
               style={{
                 background: "linear-gradient(to bottom, hsl(340, 60%, 85%), hsl(340, 50%, 75%))",
                 boxShadow: "0 4px 15px hsl(340 60% 50% / 0.2)",
@@ -252,7 +263,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             />
             {/* Candle base */}
             <div
-              className="w-12 h-3 rounded-b-lg"
+              className="w-16 h-4 rounded-b-lg"
               style={{
                 background: "linear-gradient(to bottom, hsl(340, 40%, 70%), hsl(340, 35%, 60%))",
               }}
