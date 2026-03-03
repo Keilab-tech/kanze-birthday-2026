@@ -60,6 +60,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   }, [phase]);
 
   const blowCooldownRef = useRef(false);
+  const readyForNextBlowRef = useRef(true);
 
   const startDetection = useCallback((analyser: AnalyserNode, stream: MediaStream, audioContext: AudioContext) => {
     const dataArray = new Uint8Array(analyser.frequencyBinCount);
@@ -67,12 +68,18 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       analyser.getByteFrequencyData(dataArray);
       const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
+      if (avg < 7) {
+        // Mic returned to quiet baseline; allow next blow trigger
+        readyForNextBlowRef.current = true;
+      }
+
       if (avg > 5 && avg <= 12) {
         setFlameIntensity(Math.max(0.3, 1 - (avg - 5) / 10));
       }
 
-      if (avg > 12 && !blowCooldownRef.current) {
+      if (avg > 12 && !blowCooldownRef.current && readyForNextBlowRef.current) {
         blowCooldownRef.current = true;
+        readyForNextBlowRef.current = false;
         blowCountRef.current += 1;
         setFlameIntensity(0);
 
@@ -98,14 +105,14 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     const relightTimer = setTimeout(() => {
       setFlameIntensity(1);
     }, 1500);
-    // After 2.5s, resume listening and reset cooldown
+    // After 2.8s, resume listening and reset cooldown
     const resumeTimer = setTimeout(() => {
       blowCooldownRef.current = false;
       setPhase("listening");
       if (analyserRef.current && streamRef.current && audioContextRef.current) {
         startDetection(analyserRef.current, streamRef.current, audioContextRef.current);
       }
-    }, 2800);
+    }, 3200);
     return () => {
       clearTimeout(relightTimer);
       clearTimeout(resumeTimer);
