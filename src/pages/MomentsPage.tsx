@@ -63,9 +63,9 @@ const MomentsPage = () => {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
           onClick={() => navigate("/hub")}
-          className="fixed top-4 left-4 z-30 rounded-full w-10 h-10 flex items-center justify-center shadow-md"
+          className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center shadow-sm"
           style={{
-            background: "hsl(340, 60%, 90%)",
+            background: "hsl(340, 60%, 92%)",
             color: "hsl(340, 40%, 35%)",
           }}
         >
@@ -92,15 +92,17 @@ const MomentsPage = () => {
                 key={file.name}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: i * 0.08 }}
-                className="break-inside-avoid rounded-2xl overflow-hidden shadow-md cursor-pointer group relative"
+                transition={{ duration: 0.5, delay: i * 0.06 }}
+                whileTap={{ scale: 1.02 }}
+                className="break-inside-avoid rounded-[1.2rem] overflow-hidden cursor-pointer group relative"
+                style={{ boxShadow: "0 1px 6px hsl(340 30% 60% / 0.1)" }}
                 onClick={() => setSelected(file)}
               >
-                <img src={file.url} alt={file.name} className="w-full rounded-2xl" loading="lazy" />
+                <img src={file.url} alt={file.name} className="w-full rounded-[1.2rem]" loading="lazy" />
                 <div
-                  className="absolute bottom-0 left-0 right-0 p-3 rounded-b-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                  className="absolute bottom-0 left-0 right-0 p-3 rounded-b-[1.2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{
-                    background: "linear-gradient(transparent, hsl(340, 60%, 70%, 0.8))",
+                    background: "linear-gradient(transparent, hsl(340, 50%, 65%, 0.6))",
                   }}
                 >
                   <p className="text-white text-xs text-center" style={{ fontFamily: "'Dancing Script', cursive" }}>
@@ -114,15 +116,17 @@ const MomentsPage = () => {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: files.length * 0.08 }}
-              className="break-inside-avoid rounded-2xl overflow-hidden shadow-md cursor-pointer relative"
+              transition={{ duration: 0.5, delay: files.length * 0.06 }}
+              whileTap={{ scale: 1.02 }}
+              className="break-inside-avoid rounded-[1.2rem] overflow-hidden cursor-pointer relative"
+              style={{ boxShadow: "0 1px 6px hsl(340 30% 60% / 0.1)" }}
               onClick={() => setSelected({ name: "love-emoji-chat", url: loveEmojiChat })}
             >
-              <img src={loveEmojiChat} alt="First love emoji chat" className="w-full rounded-2xl" loading="lazy" />
+              <img src={loveEmojiChat} alt="First love emoji chat" className="w-full rounded-[1.2rem]" loading="lazy" />
               <div
-                className="absolute bottom-0 left-0 right-0 p-3 rounded-b-2xl"
+                className="absolute bottom-0 left-0 right-0 p-3 rounded-b-[1.2rem]"
                 style={{
-                  background: "linear-gradient(transparent, hsl(340, 60%, 70%, 0.8))",
+                  background: "linear-gradient(transparent, hsl(340, 50%, 65%, 0.6))",
                 }}
               >
                 <p className="text-white text-xs text-center" style={{ fontFamily: "'Dancing Script', cursive" }}>
@@ -144,11 +148,10 @@ const MomentsPage = () => {
         >
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(null); }}
-            className="absolute top-5 left-5 z-[60] rounded-full w-12 h-12 flex items-center justify-center shadow-lg text-lg font-bold"
+            className="absolute top-5 left-5 z-[60] rounded-full w-11 h-11 flex items-center justify-center shadow-sm text-lg font-medium"
             style={{
-              background: "hsl(340, 60%, 85%)",
+              background: "hsl(340, 60%, 92%)",
               color: "hsl(340, 40%, 30%)",
-              border: "2px solid hsl(340, 50%, 75%)",
             }}
           >
             ←
@@ -158,7 +161,8 @@ const MomentsPage = () => {
             animate={{ scale: 1 }}
             src={selected.url}
             alt={selected.name}
-            className="max-w-full max-h-[85vh] rounded-2xl shadow-2xl"
+            className="max-w-full max-h-[85vh] rounded-2xl"
+            style={{ boxShadow: "0 4px 20px hsl(0 0% 0% / 0.3)" }}
             onClick={e => e.stopPropagation()}
           />
         </motion.div>

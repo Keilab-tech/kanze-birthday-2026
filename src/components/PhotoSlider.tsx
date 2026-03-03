@@ -42,7 +42,6 @@ const PhotoSlider = () => {
     setCurrent(prev => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
-  // Auto-slide at a slow, soothing pace
   useEffect(() => {
     if (images.length <= 1) return;
     const timer = setInterval(next, AUTO_INTERVAL);
@@ -70,11 +69,11 @@ const PhotoSlider = () => {
     (current + offset + images.length) % images.length;
 
   const slots = [
-    { offset: -2, xPercent: -130, scale: 0.45, z: 0, opacity: 0.25 },
-    { offset: -1, xPercent: -65,  scale: 0.7,  z: 1, opacity: 0.6 },
-    { offset: 0,  xPercent: 0,    scale: 1,    z: 2, opacity: 1 },
-    { offset: 1,  xPercent: 65,   scale: 0.7,  z: 1, opacity: 0.6 },
-    { offset: 2,  xPercent: 130,  scale: 0.45, z: 0, opacity: 0.25 },
+    { offset: -2, xPercent: -130, scale: 0.45, z: 0, opacity: 0.2, blur: 4 },
+    { offset: -1, xPercent: -65,  scale: 0.9,  z: 1, opacity: 0.7, blur: 2 },
+    { offset: 0,  xPercent: 0,    scale: 1,    z: 2, opacity: 1,   blur: 0 },
+    { offset: 1,  xPercent: 65,   scale: 0.9,  z: 1, opacity: 0.7, blur: 2 },
+    { offset: 2,  xPercent: 130,  scale: 0.45, z: 0, opacity: 0.2, blur: 4 },
   ];
 
   return (
@@ -111,12 +110,13 @@ const PhotoSlider = () => {
                   height: CARD_H,
                   boxShadow:
                     slot.offset === 0
-                      ? "0 0 30px hsl(340 80% 60% / 0.5), 0 10px 40px hsl(340 60% 40% / 0.3)"
-                      : "0 4px 15px hsl(0 0% 0% / 0.15)",
+                      ? "0 4px 20px hsl(340 40% 50% / 0.15)"
+                      : "0 2px 10px hsl(0 0% 0% / 0.08)",
                   border:
                     slot.offset === 0
-                      ? "2px solid hsl(340, 70%, 75%)"
-                      : "1px solid hsl(340, 30%, 80% / 0.2)",
+                      ? "1.5px solid hsl(340, 50%, 80%)"
+                      : "1px solid hsl(340, 20%, 85% / 0.3)",
+                  filter: slot.blur > 0 ? `blur(${slot.blur}px)` : "none",
                 }}
               >
                 <img
