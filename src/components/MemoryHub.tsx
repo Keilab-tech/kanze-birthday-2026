@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import PinkParticlesBackground from "./PinkParticlesBackground";
+import loveEmojiChat from "@/assets/love-emoji-chat.jpeg";
 
 const MemoryHub = () => {
   const navigate = useNavigate();
@@ -56,6 +57,27 @@ const MemoryHub = () => {
             <span className="text-xl font-medium text-foreground">Moments</span>
           </motion.button>
         </div>
+
+        {/* Love Emoji Chat Screenshot */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 1.0 }}
+          className="mt-10 w-full max-w-xs flex flex-col items-center"
+        >
+          <img
+            src={loveEmojiChat}
+            alt="First love emoji chat"
+            className="rounded-2xl shadow-lg w-full border-2"
+            style={{ borderColor: "hsl(340, 50%, 75%)" }}
+          />
+          <p
+            className="mt-3 text-center text-base font-medium"
+            style={{ color: "hsl(340, 40%, 35%)" }}
+          >
+            First time you sent me a love emoji 😂
+          </p>
+        </motion.div>
 
         {/* Letter Button */}
         <motion.button
