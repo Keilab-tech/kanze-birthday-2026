@@ -67,11 +67,11 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       analyser.getByteFrequencyData(dataArray);
       const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
 
-      if (avg > 8 && avg <= 20) {
-        setFlameIntensity(Math.max(0.3, 1 - (avg - 8) / 15));
+      if (avg > 5 && avg <= 12) {
+        setFlameIntensity(Math.max(0.3, 1 - (avg - 5) / 10));
       }
 
-      if (avg > 20 && !blowCooldownRef.current) {
+      if (avg > 12 && !blowCooldownRef.current) {
         blowCooldownRef.current = true;
         blowCountRef.current += 1;
         setFlameIntensity(0);
