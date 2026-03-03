@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { motion, useMotionValue, useSpring, animate } from "framer-motion";
+import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 
 const SWIPE_THRESHOLD = 50;
@@ -9,8 +9,7 @@ const CARD_H = 300;
 const PhotoSlider = () => {
   const [images, setImages] = useState<string[]>([]);
   const [current, setCurrent] = useState(0);
-  const dragX = useMotionValue(0);
-  const smoothX = useSpring(dragX, { stiffness: 300, damping: 30 });
+  const [dragOffset, setDragOffset] = useState(0);
   const touchStartX = useRef(0);
   const isDragging = useRef(false);
 
@@ -47,24 +46,22 @@ const PhotoSlider = () => {
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     isDragging.current = true;
-    dragX.jump(0);
+    setDragOffset(0);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!isDragging.current) return;
     const delta = e.touches[0].clientX - touchStartX.current;
-    dragX.set(delta);
+    // Dampen the drag so it feels elastic
+    setDragOffset(delta * 0.4);
   };
 
   const handleTouchEnd = () => {
     isDragging.current = false;
-    const delta = dragX.get();
-    if (delta < -SWIPE_THRESHOLD) {
-      next();
-    } else if (delta > SWIPE_THRESHOLD) {
-      prev();
-    }
-    animate(dragX, 0, { duration: 0.3, ease: "easeOut" });
+    const d = dragOffset;
+    setDragOffset(0);
+    if (d < -20) next();
+    else if (d > 20) prev();
   };
 
   if (images.length === 0) return null;
@@ -72,12 +69,12 @@ const PhotoSlider = () => {
   const getIndex = (offset: number) =>
     (current + offset + images.length) % images.length;
 
-  const basePositions = [
-    { offset: -2, xPercent: -130, scale: 0.45, z: 0, opacity: 0.25 },
-    { offset: -1, xPercent: -65,  scale: 0.7,  z: 1, opacity: 0.6 },
-    { offset: 0,  xPercent: 0,    scale: 1,    z: 2, opacity: 1 },
-    { offset: 1,  xPercent: 65,   scale: 0.7,  z: 1, opacity: 0.6 },
-    { offset: 2,  xPercent: 130,  scale: 0.45, z: 0, opacity: 0.25 },
+  const slots = [
+    { offset: -2, xBase: -1.3 * CARD_W, scale: 0.45, z: 0, opacity: 0.25 },
+    { offset: -1, xBase: -0.65 * CARD_W, scale: 0.7, z: 1, opacity: 0.6 },
+    { offset: 0, xBase: 0, scale: 1, z: 2, opacity: 1 },
+    { offset: 1, xBase: 0.65 * CARD_W, scale: 0.7, z: 1, opacity: 0.6 },
+    { offset: 2, xBase: 1.3 * CARD_W, scale: 0.45, z: 0, opacity: 0.25 },
   ];
 
   return (
@@ -89,26 +86,23 @@ const PhotoSlider = () => {
       onTouchEnd={handleTouchEnd}
     >
       <div className="absolute inset-0 flex items-center justify-center">
-        {basePositions.map((pos) => {
-          const idx = getIndex(pos.offset);
-          const baseX = (pos.xPercent / 100) * CARD_W;
+        {slots.map((slot) => {
+          const idx = getIndex(slot.offset);
           return (
             <motion.div
-              key={`slot-${pos.offset}`}
+              key={`slot-${slot.offset}`}
               className="absolute"
-              style={{
-                zIndex: pos.z,
-                x: smoothX,
-              }}
+              style={{ zIndex: slot.z }}
               animate={{
-                x: baseX,
-                scale: pos.scale,
-                opacity: pos.opacity,
+                x: slot.xBase + dragOffset,
+                scale: slot.scale,
+                opacity: slot.opacity,
               }}
-              transition={{
-                duration: 0.5,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
+              transition={
+                isDragging.current
+                  ? { type: "tween", duration: 0.05 }
+                  : { type: "spring", stiffness: 300, damping: 30 }
+              }
             >
               <div
                 className="rounded-2xl overflow-hidden"
@@ -116,11 +110,11 @@ const PhotoSlider = () => {
                   width: CARD_W,
                   height: CARD_H,
                   boxShadow:
-                    pos.offset === 0
+                    slot.offset === 0
                       ? "0 0 30px hsl(340 80% 60% / 0.5), 0 10px 40px hsl(340 60% 40% / 0.3)"
                       : "0 4px 15px hsl(0 0% 0% / 0.15)",
                   border:
-                    pos.offset === 0
+                    slot.offset === 0
                       ? "2px solid hsl(340, 70%, 75%)"
                       : "1px solid hsl(340, 30%, 80% / 0.2)",
                 }}
