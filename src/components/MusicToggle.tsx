@@ -84,15 +84,17 @@ const MusicPlayerBar = () => {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const location = useLocation();
-
-  if (!hasStarted || location.pathname !== "/hub") return null;
+  const showPlayer = hasStarted && location.pathname === "/hub";
 
   return (
     <AnimatePresence>
+      {showPlayer && (
       <motion.div
+        key="music-player"
         initial={{ y: 80, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
+        exit={{ y: 80, opacity: 0 }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
         className="fixed bottom-0 left-0 right-0 z-[60] flex flex-col"
         style={{
           background: "linear-gradient(180deg, hsl(340, 30%, 14%) 0%, hsl(340, 20%, 8%) 100%)",
@@ -182,6 +184,7 @@ const MusicPlayerBar = () => {
           </span>
         </div>
       </motion.div>
+      )}
     </AnimatePresence>
   );
 };
