@@ -145,10 +145,11 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
         </div>
       )}
 
+      {/* Fireworks phase — outside centered content for full-screen effect */}
+      {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
+
       {/* Centered content area */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-        {/* Fireworks phase */}
-        {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
 
         {/* Birthday text after fireworks */}
         <AnimatePresence>
