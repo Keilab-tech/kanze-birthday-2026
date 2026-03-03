@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
@@ -38,6 +38,7 @@ const LetterPage = () => {
   const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
   const [playingNote, setPlayingNote] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const typeAudioCtxRef = useRef<AudioContext | null>(null);
   const [showStars, setShowStars] = useState(false);
   const { fadeDown, fadeUp } = useMusic();
 
@@ -69,16 +70,40 @@ const LetterPage = () => {
     loadVoiceNotes();
   }, []);
 
+  // Typewriter click sound using Web Audio API
+  const playTypeClick = useCallback(() => {
+    try {
+      if (!typeAudioCtxRef.current) {
+        typeAudioCtxRef.current = new AudioContext();
+      }
+      const ctx = typeAudioCtxRef.current;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = "square";
+      osc.frequency.setValueAtTime(800 + Math.random() * 400, ctx.currentTime);
+      gain.gain.setValueAtTime(0.06, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.04);
+    } catch {}
+  }, []);
+
   // Typewriter effect
   useEffect(() => {
     if (visibleLines >= letterLines.length) {
       setTimeout(() => setShowStars(true), 1000);
       return;
     }
-    const delay = letterLines[visibleLines] === "" ? 400 : 600;
-    const t = setTimeout(() => setVisibleLines(v => v + 1), delay);
+    const isBlank = letterLines[visibleLines] === "";
+    const delay = isBlank ? 400 : 600;
+    const t = setTimeout(() => {
+      if (!isBlank) playTypeClick();
+      setVisibleLines(v => v + 1);
+    }, delay);
     return () => clearTimeout(t);
-  }, [visibleLines]);
+  }, [visibleLines, playTypeClick]);
 
   const playVoiceNote = (note: VoiceNote) => {
     if (audioRef.current) {
