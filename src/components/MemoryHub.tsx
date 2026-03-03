@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
+import PhotoSlider from "./PhotoSlider";
 
 const glowButtonStyle = {
   background: "linear-gradient(135deg, hsl(340, 80%, 70%), hsl(350, 75%, 65%))",
@@ -19,6 +20,16 @@ const MemoryHub = () => {
       <PinkParticlesBackground />
 
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-12">
+        {/* Photo Slider */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.8 }}
+          className="w-full max-w-sm mb-8"
+        >
+          <PhotoSlider />
+        </motion.div>
+
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
