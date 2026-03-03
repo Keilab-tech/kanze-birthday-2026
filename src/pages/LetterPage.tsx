@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
+import { useMusic } from "@/contexts/MusicContext";
 
 const letterLines = [
   "Dear Kanze...",
@@ -38,6 +39,13 @@ const LetterPage = () => {
   const [playingNote, setPlayingNote] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [showStars, setShowStars] = useState(false);
+  const { fadeDown, fadeUp } = useMusic();
+
+  // Fade music down on mount, restore on unmount
+  useEffect(() => {
+    fadeDown();
+    return () => { fadeUp(); };
+  }, [fadeDown, fadeUp]);
 
   // Load voice notes
   useEffect(() => {
