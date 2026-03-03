@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import CountdownClock from "./CountdownClock";
 import Fireworks from "./Fireworks";
+import { useMusic } from "@/contexts/MusicContext";
 
 type Phase = "intro" | "candle" | "wish" | "waiting" | "listening" | "blown" | "fireworks" | "birthday-text" | "done";
 
@@ -14,6 +15,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const [flameIntensity, setFlameIntensity] = useState(1);
   const audioContextRef = useRef<AudioContext | null>(null);
   const animFrameRef = useRef<number>(0);
+  const { start: startMusic } = useMusic();
 
   // Phase timing
   useEffect(() => {
@@ -79,8 +81,9 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   }, [phase]);
 
   const handleFireworksComplete = useCallback(() => {
+    startMusic();
     setPhase("birthday-text");
-  }, []);
+  }, [startMusic]);
 
   useEffect(() => {
     if (phase !== "birthday-text") return;
