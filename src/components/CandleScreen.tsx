@@ -307,12 +307,12 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
           >
             {/* Cake + flame as a single unit */}
             <div className="relative" style={{ width: "480px", maxWidth: "120vw" }}>
-              {/* Flame — centered on top of cake */}
+              {/* Flame — sitting directly on top of cake */}
               <div
                 className="absolute left-1/2"
                 style={{
                   transform: "translateX(-50%)",
-                  top: "-60px",
+                  top: "45px",
                   opacity: flameIntensity,
                   transition: "opacity 0.3s ease",
                   zIndex: 2,
@@ -322,7 +322,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   <div
                     className="animate-flicker text-center"
                     style={{
-                      fontSize: "5.6rem",
+                      fontSize: "3.5rem",
                       transform: `scaleY(${flameIntensity})`,
                       transition: "transform 0.15s ease",
                       lineHeight: 1,
@@ -334,15 +334,20 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                 {/* Wick */}
                 <div
                   className="mx-auto"
-                  style={{ width: "3px", height: "14px", backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }}
+                  style={{ width: "2px", height: "8px", backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-4px" }}
                 />
               </div>
-              {/* Cake image — no background, no glow, no shadows */}
+              {/* Cake image — original with mask to hide dark bg */}
               <img
                 src="/images/cake-final.png"
                 alt="Birthday cake"
                 className="w-full h-auto block"
-                style={{ filter: "none", boxShadow: "none" }}
+                style={{
+                  WebkitMaskImage: "radial-gradient(ellipse 75% 70% at 50% 55%, black 50%, transparent 85%)",
+                  maskImage: "radial-gradient(ellipse 75% 70% at 50% 55%, black 50%, transparent 85%)",
+                  filter: "none",
+                  boxShadow: "none",
+                }}
                 draggable={false}
               />
             </div>
