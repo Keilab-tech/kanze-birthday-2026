@@ -83,13 +83,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
         blowCountRef.current += 1;
         setFlameIntensity(0);
 
-        if (blowCountRef.current >= 3) {
+        if (blowCountRef.current >= 1) {
           setPhase("blown");
           stream.getTracks().forEach(t => t.stop());
           audioContext.close();
-          return;
-        } else {
-          setPhase("smoke-relight");
           return;
         }
       }
