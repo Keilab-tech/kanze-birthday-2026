@@ -127,10 +127,11 @@ const GalleryPage = () => {
           {/* Close / Back button */}
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(null); }}
-            className="absolute top-5 left-5 z-60 rounded-full w-10 h-10 flex items-center justify-center shadow-lg"
+            className="absolute top-5 left-5 z-[60] rounded-full w-12 h-12 flex items-center justify-center shadow-lg text-lg font-bold"
             style={{
-              background: "hsl(340, 60%, 90%)",
-              color: "hsl(340, 40%, 35%)",
+              background: "hsl(340, 60%, 85%)",
+              color: "hsl(340, 40%, 30%)",
+              border: "2px solid hsl(340, 50%, 75%)",
             }}
           >
             ←
