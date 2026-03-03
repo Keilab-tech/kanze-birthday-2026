@@ -181,7 +181,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
               className="text-center px-8 space-y-4"
             >
               <h1
-                className="text-5xl md:text-6xl text-glow-pink"
+                className="text-5xl md:text-6xl"
                 style={{ color: "hsl(340, 80%, 75%)" }}
               >
                 Happy Birthday Kanze 💖
