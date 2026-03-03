@@ -1,75 +1,140 @@
-import { motion } from "framer-motion";
+import { useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMusic } from "@/contexts/MusicContext";
+import { SkipBack, Play, Pause, SkipForward } from "lucide-react";
 
-const MusicToggle = () => {
-  const { toggle, isPlaying } = useMusic();
+const BAR_COUNT = 32;
+
+const MusicPlayerBar = () => {
+  const { toggle, isPlaying, next, prev, trackTitle, analyserNode } = useMusic();
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animFrameRef = useRef<number>(0);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    let data: number[] = [];
+
+    if (analyserNode && isPlaying) {
+      const bufLen = analyserNode.frequencyBinCount;
+      const raw = new Uint8Array(bufLen);
+      analyserNode.getByteFrequencyData(raw);
+      // Sample BAR_COUNT bars from the frequency data
+      for (let i = 0; i < BAR_COUNT; i++) {
+        const idx = Math.floor((i / BAR_COUNT) * bufLen);
+        data.push(raw[idx] / 255);
+      }
+    } else {
+      // Idle: small flat bars
+      data = Array(BAR_COUNT).fill(0.05);
+    }
+
+    const barW = (w / BAR_COUNT) * 0.65;
+    const gap = (w / BAR_COUNT) * 0.35;
+
+    for (let i = 0; i < BAR_COUNT; i++) {
+      const barH = Math.max(3, data[i] * h * 0.9);
+      const x = i * (barW + gap) + gap / 2;
+      const y = (h - barH) / 2;
+
+      // Gradient from rose to princess-glow (matching theme hue 340)
+      const gradient = ctx.createLinearGradient(x, y + barH, x, y);
+      gradient.addColorStop(0, "hsl(340, 80%, 55%)");
+      gradient.addColorStop(0.5, "hsl(340, 90%, 70%)");
+      gradient.addColorStop(1, "hsl(350, 100%, 82%)");
+
+      ctx.fillStyle = gradient;
+      ctx.beginPath();
+      ctx.roundRect(x, y, barW, barH, 2);
+      ctx.fill();
+    }
+
+    animFrameRef.current = requestAnimationFrame(draw);
+  }, [analyserNode, isPlaying]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.width = canvas.offsetWidth * 2;
+      canvas.height = canvas.offsetHeight * 2;
+    }
+    animFrameRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [draw]);
 
   return (
-    <motion.button
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5 }}
-      onClick={toggle}
-      className="fixed bottom-5 right-5 z-50 flex items-center gap-2 rounded-full px-3 py-2 shadow-xl"
-      style={{
-        background: "linear-gradient(135deg, hsl(220, 10%, 25%), hsl(220, 10%, 18%))",
-        border: "1px solid hsl(220, 8%, 35%)",
-      }}
-      aria-label={isPlaying ? "Pause music" : "Play music"}
-    >
-      {/* Vinyl disc */}
+    <AnimatePresence>
       <motion.div
-        animate={{ rotate: isPlaying ? 360 : 0 }}
-        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-        className="w-9 h-9 rounded-full flex items-center justify-center"
+        initial={{ y: 80, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+        className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 px-4 py-2"
         style={{
-          background: "radial-gradient(circle, hsl(0,0%,30%) 18%, hsl(0,0%,12%) 20%, hsl(0,0%,18%) 45%, hsl(0,0%,12%) 47%, hsl(0,0%,20%) 70%, hsl(0,0%,15%) 100%)",
-          border: "2px solid hsl(0, 0%, 40%)",
+          background: "linear-gradient(180deg, hsl(340, 30%, 14%) 0%, hsl(340, 20%, 8%) 100%)",
+          borderTop: "1px solid hsl(340, 40%, 25%)",
+          backdropFilter: "blur(12px)",
         }}
       >
-        <div
-          className="w-2 h-2 rounded-full"
-          style={{ background: "hsl(0, 0%, 55%)" }}
-        />
-      </motion.div>
+        {/* Controls */}
+        <div className="flex items-center gap-1 shrink-0">
+          <button
+            onClick={prev}
+            className="p-2 rounded-full transition-colors"
+            style={{ color: "hsl(340, 60%, 75%)" }}
+            aria-label="Previous track"
+          >
+            <SkipBack size={18} fill="currentColor" />
+          </button>
 
-      {/* Sound bars */}
-      <div className="flex items-center gap-[2px] h-5">
-        {[0, 1, 2, 3, 4, 5, 6].map((i) => (
-          <motion.div
-            key={i}
-            className="w-[3px] rounded-full"
-            style={{ background: "hsl(0, 0%, 60%)" }}
-            animate={
-              isPlaying
-                ? {
-                    height: [4, 8 + Math.random() * 10, 4, 12 + Math.random() * 6, 4],
-                  }
-                : { height: 4 }
-            }
-            transition={
-              isPlaying
-                ? {
-                    duration: 0.8 + Math.random() * 0.4,
-                    repeat: Infinity,
-                    delay: i * 0.08,
-                    ease: "easeInOut",
-                  }
-                : { duration: 0.3 }
-            }
+          <button
+            onClick={toggle}
+            className="p-2.5 rounded-full transition-colors"
+            style={{
+              background: "hsl(340, 80%, 65%)",
+              color: "hsl(0, 0%, 100%)",
+            }}
+            aria-label={isPlaying ? "Pause" : "Play"}
+          >
+            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+          </button>
+
+          <button
+            onClick={next}
+            className="p-2 rounded-full transition-colors"
+            style={{ color: "hsl(340, 60%, 75%)" }}
+            aria-label="Next track"
+          >
+            <SkipForward size={18} fill="currentColor" />
+          </button>
+        </div>
+
+        {/* Waveform visualizer */}
+        <div className="flex-1 h-10 relative overflow-hidden rounded-lg"
+          style={{ background: "hsl(340, 20%, 10%, 0.5)" }}
+        >
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full"
           />
-        ))}
-      </div>
+        </div>
 
-      {/* MUSIC label */}
-      <span
-        className="text-[10px] font-semibold tracking-wider pr-1"
-        style={{ color: "hsl(0, 0%, 70%)" }}
-      >
-        {isPlaying ? "♪" : "▶"}
-      </span>
-    </motion.button>
+        {/* Track name */}
+        <span
+          className="text-xs font-medium shrink-0 max-w-[100px] truncate"
+          style={{ color: "hsl(340, 50%, 75%)" }}
+        >
+          {trackTitle}
+        </span>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
-export default MusicToggle;
+export default MusicPlayerBar;
