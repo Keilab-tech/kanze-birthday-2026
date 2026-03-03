@@ -303,51 +303,34 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
             className="absolute left-1/2 flex flex-col items-center"
-            style={{ transform: "translateX(-50%)", bottom: "-30px" }}
+            style={{ transform: "translateX(-50%)", bottom: "-60px" }}
           >
             {/* Flame — 🔥 emoji, positioned above cake */}
             <div className="relative mb-0" style={{ opacity: flameIntensity, transition: "opacity 0.3s ease" }}>
               {flameIntensity > 0 && (
-                <>
-                  <div
-                    className="absolute -inset-14 rounded-full"
-                    style={{
-                      background: "radial-gradient(circle, hsl(35 90% 60% / 0.12), hsl(340 70% 60% / 0.06), transparent 70%)",
-                      animation: "flame-pulse 2.5s ease-in-out infinite",
-                    }}
-                  />
-                  <div
-                    className="absolute -inset-8 rounded-full"
-                    style={{
-                      background: "radial-gradient(circle, hsl(35 80% 55% / 0.25), hsl(30 70% 50% / 0.1), transparent 70%)",
-                      animation: "flame-pulse 1.8s ease-in-out infinite 0.4s",
-                    }}
-                  />
-                  <div
-                    className="animate-flicker text-center"
-                    style={{
-                      fontSize: "5.6rem",
-                      transform: `scaleY(${flameIntensity})`,
-                      transition: "transform 0.15s ease",
-                      lineHeight: 1,
-                    }}
-                  >
-                    🔥
-                  </div>
-                </>
+                <div
+                  className="animate-flicker text-center"
+                  style={{
+                    fontSize: "5.6rem",
+                    transform: `scaleY(${flameIntensity})`,
+                    transition: "transform 0.15s ease",
+                    lineHeight: 1,
+                  }}
+                >
+                  🔥
+                </div>
               )}
             </div>
             {/* Wick */}
             <div className="w-1 h-4" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }} />
-            {/* Birthday Cake — larger, with screen blend to hide black bg */}
+            {/* Birthday Cake — 2x larger, no glow mask */}
             <img
               src="/images/cake-final.png"
               alt="Birthday cake"
-              className="w-96 h-auto"
               style={{
                 marginTop: "-6px",
-                WebkitMaskImage: "radial-gradient(ellipse 60% 55% at 50% 45%, black 55%, transparent 90%)",
-                maskImage: "radial-gradient(ellipse 60% 55% at 50% 45%, black 55%, transparent 90%)",
+                width: "480px",
+                maxWidth: "120vw",
               }}
               draggable={false}
             />
