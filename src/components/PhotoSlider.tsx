@@ -1,10 +1,15 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+
+const SWIPE_THRESHOLD = 40;
 
 const PhotoSlider = () => {
   const [images, setImages] = useState<string[]>([]);
   const [current, setCurrent] = useState(0);
+  const touchStartX = useRef(0);
+  const touchDelta = useRef(0);
+  const autoTimerRef = useRef<ReturnType<typeof setInterval>>();
 
   useEffect(() => {
     const load = async () => {
@@ -31,12 +36,42 @@ const PhotoSlider = () => {
     setCurrent(prev => (prev + 1) % images.length);
   }, [images.length]);
 
-  // Auto-slide every 2s (2x speed)
+  const prev = useCallback(() => {
+    if (images.length === 0) return;
+    setCurrent(prev => (prev - 1 + images.length) % images.length);
+  }, [images.length]);
+
+  const resetAutoSlide = useCallback(() => {
+    if (autoTimerRef.current) clearInterval(autoTimerRef.current);
+    autoTimerRef.current = setInterval(next, 2000);
+  }, [next]);
+
+  // Auto-slide every 2s
   useEffect(() => {
     if (images.length <= 1) return;
-    const timer = setInterval(next, 2000);
-    return () => clearInterval(timer);
-  }, [next, images.length]);
+    resetAutoSlide();
+    return () => { if (autoTimerRef.current) clearInterval(autoTimerRef.current); };
+  }, [resetAutoSlide, images.length]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchDelta.current = 0;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    touchDelta.current = e.touches[0].clientX - touchStartX.current;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchDelta.current < -SWIPE_THRESHOLD) {
+      next();
+      resetAutoSlide();
+    } else if (touchDelta.current > SWIPE_THRESHOLD) {
+      prev();
+      resetAutoSlide();
+    }
+    touchDelta.current = 0;
+  };
 
   if (images.length === 0) return null;
 
@@ -53,7 +88,13 @@ const PhotoSlider = () => {
   ];
 
   return (
-    <div className="w-full relative overflow-hidden" style={{ height: 280 }}>
+    <div
+      className="w-full relative overflow-hidden touch-pan-y"
+      style={{ height: 280 }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className="absolute inset-0 flex items-center justify-center">
         {positions.map((pos) => {
           const idx = getIndex(pos.offset);
