@@ -208,18 +208,30 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             <div className="relative mb-0.5" style={{ opacity: flameIntensity, transition: "opacity 0.15s ease" }}>
               {flameIntensity > 0 && (
                 <>
+                  {/* Outer magical glow pulse */}
+                  <div
+                    className="absolute -inset-14 rounded-full"
+                    style={{
+                      background: "radial-gradient(circle, hsl(35 90% 60% / 0.12), hsl(340 70% 60% / 0.06), transparent 70%)",
+                      animation: "flame-pulse 2.5s ease-in-out infinite",
+                    }}
+                  />
+                  {/* Inner warm glow pulse */}
+                  <div
+                    className="absolute -inset-8 rounded-full"
+                    style={{
+                      background: "radial-gradient(circle, hsl(35 80% 55% / 0.25), hsl(30 70% 50% / 0.1), transparent 70%)",
+                      animation: "flame-pulse 1.8s ease-in-out infinite 0.4s",
+                    }}
+                  />
+                  {/* Flame */}
                   <div
                     className="w-4 h-9 rounded-full animate-flicker"
                     style={{
                       background: "linear-gradient(to top, hsl(30, 80%, 50%), hsl(40, 90%, 65%), hsl(45, 95%, 90%))",
                       transform: `scaleY(${flameIntensity})`,
                       transition: "transform 0.15s ease",
-                    }}
-                  />
-                  <div
-                    className="absolute -inset-8 rounded-full animate-flame-glow"
-                    style={{
-                      background: "radial-gradient(circle, hsl(35 80% 55% / 0.2), transparent 70%)",
+                      filter: "blur(0.3px)",
                     }}
                   />
                 </>
