@@ -278,7 +278,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   <div
                     className="animate-flicker text-center"
                     style={{
-                      fontSize: "2.8rem",
+                      fontSize: "5.6rem",
                       transform: `scaleY(${flameIntensity})`,
                       transition: "transform 0.15s ease",
                       lineHeight: 1,
@@ -290,10 +290,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
               )}
             </div>
             {/* Wick */}
-            <div className="w-0.5 h-2" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-4px" }} />
+            <div className="w-1 h-4" style={{ backgroundColor: "hsl(0, 0%, 40%)", marginTop: "-8px" }} />
             {/* Candle body */}
             <div
-              className="w-12 h-36 rounded-t-md"
+              className="w-24 h-72 rounded-t-md"
               style={{
                 background: "linear-gradient(to bottom, hsl(340, 60%, 85%), hsl(340, 50%, 75%))",
                 boxShadow: "0 4px 15px hsl(340 60% 50% / 0.2)",
