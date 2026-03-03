@@ -109,8 +109,13 @@ const PhotoSlider = () => {
                 <img
                   src="/images/crown-nobg.png"
                   alt="Crown"
-                  className="absolute -top-8 left-1/2 w-20 h-auto pointer-events-none"
-                  style={{ transform: "translateX(-50%)", zIndex: 10 }}
+                  className="absolute -top-10 left-1/2 w-24 h-auto pointer-events-none"
+                  style={{
+                    transform: "translateX(-50%)",
+                    zIndex: 10,
+                    WebkitMaskImage: "radial-gradient(ellipse 85% 80% at 50% 50%, black 50%, transparent 95%)",
+                    maskImage: "radial-gradient(ellipse 85% 80% at 50% 50%, black 50%, transparent 95%)",
+                  }}
                   draggable={false}
                 />
               )}
