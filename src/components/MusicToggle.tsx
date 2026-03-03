@@ -95,7 +95,7 @@ const MusicPlayerBar = () => {
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 30, opacity: 0 }}
         transition={{ duration: 0.4, ease: "easeInOut" }}
-        className="w-full max-w-sm mx-auto rounded-2xl flex flex-col overflow-hidden"
+        className="w-full max-w-[200px] mx-auto rounded-xl flex flex-col overflow-hidden"
         style={{
           background: "linear-gradient(180deg, hsl(340, 30%, 14%) 0%, hsl(340, 20%, 8%) 100%)",
           borderTop: "1px solid hsl(340, 40%, 25%)",
@@ -106,7 +106,7 @@ const MusicPlayerBar = () => {
         <div
           ref={progressRef}
           onClick={handleSeek}
-          className="w-full h-1.5 cursor-pointer group relative"
+          className="w-full h-1 cursor-pointer group relative"
           style={{ background: "hsl(340, 20%, 20%)" }}
         >
           <div
@@ -124,62 +124,41 @@ const MusicPlayerBar = () => {
         </div>
 
         {/* Main controls row */}
-        <div className="flex items-center gap-3 px-4 py-2">
+        <div className="flex items-center gap-1.5 px-2 py-1.5">
           {/* Controls */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={prev}
-              className="p-2 rounded-full transition-colors"
-              style={{ color: "hsl(340, 60%, 75%)" }}
-              aria-label="Previous track"
-            >
-              <SkipBack size={18} fill="currentColor" />
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button onClick={prev} className="p-1 rounded-full transition-colors" style={{ color: "hsl(340, 60%, 75%)" }} aria-label="Previous track">
+              <SkipBack size={12} fill="currentColor" />
             </button>
 
-            <button
-              onClick={toggle}
-              className="p-2.5 rounded-full transition-colors"
-              style={{
-                background: "hsl(340, 80%, 65%)",
-                color: "hsl(0, 0%, 100%)",
-              }}
-              aria-label={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+            <button onClick={toggle} className="p-1.5 rounded-full transition-colors" style={{ background: "hsl(340, 80%, 65%)", color: "hsl(0, 0%, 100%)" }} aria-label={isPlaying ? "Pause" : "Play"}>
+              {isPlaying ? <Pause size={12} fill="currentColor" /> : <Play size={12} fill="currentColor" />}
             </button>
 
-            <button
-              onClick={next}
-              className="p-2 rounded-full transition-colors"
-              style={{ color: "hsl(340, 60%, 75%)" }}
-              aria-label="Next track"
-            >
-              <SkipForward size={18} fill="currentColor" />
+            <button onClick={next} className="p-1 rounded-full transition-colors" style={{ color: "hsl(340, 60%, 75%)" }} aria-label="Next track">
+              <SkipForward size={12} fill="currentColor" />
             </button>
           </div>
 
           {/* Time */}
-          <span className="text-[10px] tabular-nums shrink-0" style={{ color: "hsl(340, 40%, 60%)" }}>
+          <span className="text-[8px] tabular-nums shrink-0" style={{ color: "hsl(340, 40%, 60%)" }}>
             {formatTime(currentTime)}
           </span>
 
           {/* Waveform visualizer */}
-          <div className="flex-1 h-10 relative overflow-hidden rounded-lg"
+          <div className="flex-1 h-6 relative overflow-hidden rounded-md"
             style={{ background: "hsl(340, 20%, 10%, 0.5)" }}
           >
             <canvas ref={canvasRef} className="w-full h-full" />
           </div>
 
           {/* Time remaining */}
-          <span className="text-[10px] tabular-nums shrink-0" style={{ color: "hsl(340, 40%, 60%)" }}>
+          <span className="text-[8px] tabular-nums shrink-0" style={{ color: "hsl(340, 40%, 60%)" }}>
             {formatTime(duration)}
           </span>
 
           {/* Track name */}
-          <span
-            className="text-xs font-medium shrink-0 max-w-[100px] truncate"
-            style={{ color: "hsl(340, 50%, 75%)" }}
-          >
+          <span className="text-[8px] font-medium shrink-0 max-w-[60px] truncate" style={{ color: "hsl(340, 50%, 75%)" }}>
             {trackTitle}
           </span>
         </div>
