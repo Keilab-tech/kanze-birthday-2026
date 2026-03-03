@@ -34,7 +34,7 @@ interface VoiceNote {
 
 const LetterPage = () => {
   const navigate = useNavigate();
-  const [visibleLines, setVisibleLines] = useState(0);
+  const [visibleChars, setVisibleChars] = useState(0);
   const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
   const [playingNote, setPlayingNote] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -47,6 +47,10 @@ const LetterPage = () => {
     fadeDown();
     return () => { fadeUp(); };
   }, [fadeDown, fadeUp]);
+
+  // Flatten all text into a single string for char-by-char typing
+  const fullText = letterLines.join("\n");
+  const totalChars = fullText.length;
 
   // Load voice notes
   useEffect(() => {
@@ -70,40 +74,53 @@ const LetterPage = () => {
     loadVoiceNotes();
   }, []);
 
-  // Typewriter click sound using Web Audio API
-  const playTypeClick = useCallback(() => {
+  // Realistic keyboard click using noise burst
+  const playKeyClick = useCallback(() => {
     try {
       if (!typeAudioCtxRef.current) {
         typeAudioCtxRef.current = new AudioContext();
       }
       const ctx = typeAudioCtxRef.current;
-      const osc = ctx.createOscillator();
+      const bufferSize = ctx.sampleRate * 0.025; // 25ms
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const output = buffer.getChannelData(0);
+      // White noise burst shaped like a key click
+      for (let i = 0; i < bufferSize; i++) {
+        const env = Math.exp(-i / (bufferSize * 0.15));
+        output[i] = (Math.random() * 2 - 1) * env * 0.3;
+      }
+      const source = ctx.createBufferSource();
+      source.buffer = buffer;
+      // Bandpass to sound like a keyboard
+      const filter = ctx.createBiquadFilter();
+      filter.type = "bandpass";
+      filter.frequency.value = 2000 + Math.random() * 1500;
+      filter.Q.value = 1.5;
       const gain = ctx.createGain();
-      osc.type = "square";
-      osc.frequency.setValueAtTime(800 + Math.random() * 400, ctx.currentTime);
-      gain.gain.setValueAtTime(0.06, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
-      osc.connect(gain);
+      gain.gain.value = 0.12 + Math.random() * 0.06;
+      source.connect(filter);
+      filter.connect(gain);
       gain.connect(ctx.destination);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.04);
+      source.start();
     } catch {}
   }, []);
 
-  // Typewriter effect
+  // Character-by-character typewriter
   useEffect(() => {
-    if (visibleLines >= letterLines.length) {
+    if (visibleChars >= totalChars) {
       setTimeout(() => setShowStars(true), 1000);
       return;
     }
-    const isBlank = letterLines[visibleLines] === "";
-    const delay = isBlank ? 400 : 600;
+    const currentChar = fullText[visibleChars];
+    const isNewline = currentChar === "\n";
+    // Slower speed: 45-75ms per char, longer pause for newlines
+    const delay = isNewline ? 200 : (45 + Math.random() * 30);
     const t = setTimeout(() => {
-      if (!isBlank) playTypeClick();
-      setVisibleLines(v => v + 1);
+      if (!isNewline && currentChar !== " ") playKeyClick();
+      setVisibleChars(v => v + 1);
     }, delay);
     return () => clearTimeout(t);
-  }, [visibleLines, playTypeClick]);
+  }, [visibleChars, totalChars, fullText, playKeyClick]);
 
   const playVoiceNote = (note: VoiceNote) => {
     if (audioRef.current) {
@@ -146,60 +163,65 @@ const LetterPage = () => {
         </motion.button>
 
         <div className="mt-16 space-y-1">
-          {letterLines.slice(0, visibleLines).map((line, i) => {
-            const isTitle = i === 0;
-            const voiceNoteIndex = voiceNoteLines.indexOf(i);
-            const hasVoiceNote = voiceNoteIndex !== -1 && voiceNoteIndex < voiceNotes.length;
+          {(() => {
+            const visibleText = fullText.slice(0, visibleChars);
+            const visibleLineTexts = visibleText.split("\n");
+            return visibleLineTexts.map((lineText, i) => {
+              const isTitle = i === 0;
+              const voiceNoteIndex = voiceNoteLines.indexOf(i);
+              const hasVoiceNote = voiceNoteIndex !== -1 && voiceNoteIndex < voiceNotes.length;
+              // Only show completed lines (line is complete if we've passed its newline)
+              const lineComplete = i < visibleLineTexts.length - 1;
 
-            if (line === "") {
-              return <div key={i} className="h-4" />;
-            }
+              if (letterLines[i] === "" && lineComplete) {
+                return <div key={i} className="h-4" />;
+              }
+              if (lineText === "" && !lineComplete) {
+                return null;
+              }
 
-            return (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="flex items-start gap-2"
-              >
-                <p
-                  className={isTitle ? "text-2xl text-primary mb-4" : "text-base leading-relaxed text-foreground/80"}
-                  style={{
-                    fontFamily: isTitle ? "'Dancing Script', cursive" : "'Quicksand', sans-serif",
-                  }}
-                >
-                  {line}
-                </p>
-                {hasVoiceNote && (
-                  <button
-                    onClick={() => playVoiceNote(voiceNotes[voiceNoteIndex])}
-                    className="flex-shrink-0 mt-1 w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-125"
+              return (
+                <div key={i} className="flex items-start gap-2">
+                  <p
+                    className={isTitle ? "text-2xl text-primary mb-4" : "text-base leading-relaxed text-foreground/80"}
                     style={{
-                      background: playingNote === voiceNotes[voiceNoteIndex].name
-                        ? "hsl(340, 80%, 65%)"
-                        : "hsl(340, 60%, 80%)",
-                      boxShadow: playingNote === voiceNotes[voiceNoteIndex].name
-                        ? "0 0 10px hsl(340, 80%, 65%, 0.5)"
-                        : "none",
+                      fontFamily: isTitle ? "'Dancing Script', cursive" : "'Quicksand', sans-serif",
                     }}
                   >
-                    <span className="text-white text-[8px]">
-                      {playingNote === voiceNotes[voiceNoteIndex].name ? "■" : "▶"}
-                    </span>
-                  </button>
-                )}
-              </motion.div>
-            );
-          })}
-
-          {/* Cursor */}
-          {visibleLines < letterLines.length && (
-            <span
-              className="inline-block w-0.5 h-5 animate-typewriter-cursor ml-1"
-              style={{ backgroundColor: "hsl(340, 80%, 65%)" }}
-            />
-          )}
+                    {lineText}
+                    {/* Blinking cursor on the current line */}
+                    {!lineComplete && (
+                      <span
+                        className="inline-block w-0.5 h-5 ml-0.5 align-middle"
+                        style={{
+                          backgroundColor: "hsl(340, 80%, 65%)",
+                          animation: "blink 0.8s step-end infinite",
+                        }}
+                      />
+                    )}
+                  </p>
+                  {hasVoiceNote && lineComplete && (
+                    <button
+                      onClick={() => playVoiceNote(voiceNotes[voiceNoteIndex])}
+                      className="flex-shrink-0 mt-1 w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-125"
+                      style={{
+                        background: playingNote === voiceNotes[voiceNoteIndex].name
+                          ? "hsl(340, 80%, 65%)"
+                          : "hsl(340, 60%, 80%)",
+                        boxShadow: playingNote === voiceNotes[voiceNoteIndex].name
+                          ? "0 0 10px hsl(340, 80%, 65%, 0.5)"
+                          : "none",
+                      }}
+                    >
+                      <span className="text-white text-[8px]">
+                        {playingNote === voiceNotes[voiceNoteIndex].name ? "■" : "▶"}
+                      </span>
+                    </button>
+                  )}
+                </div>
+              );
+            });
+          })()}
         </div>
 
         {/* Stars forming "Kanze" */}

@@ -192,3 +192,8 @@
 .text-glow-pink {
   text-shadow: 0 0 20px hsl(340 80% 65% / 0.4), 0 0 40px hsl(340 80% 65% / 0.2);
 }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
