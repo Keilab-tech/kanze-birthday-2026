@@ -6,13 +6,13 @@ const CARD_H = 300;
 const AUTO_INTERVAL = 3500;
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif"];
 
-/* ── Hard-coded gallery photos (already uploaded) ─────────────────── */
+/* ── Hard-coded gallery photos — served from public/images/gallery/ ── */
 const GALLERY_PHOTOS = [
-  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM.jpeg",
-  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM%20(1).jpeg",
-  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM%20(2).jpeg",
-  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM%20(3).jpeg",
-  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.37%20AM.jpeg",
+  "/images/gallery/photo1.jpeg",
+  "/images/gallery/photo2.jpeg",
+  "/images/gallery/photo3.jpeg",
+  "/images/gallery/photo4.jpeg",
+  "/images/gallery/photo5.jpeg",
 ];
 
 const PhotoSlider = () => {
