@@ -2,103 +2,158 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-/* ── SVG path helpers ─────────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════════ */
+/*  SVG path helpers                                                    */
+/* ═══════════════════════════════════════════════════════════════════ */
 const ff = (n: number) => Math.round(n * 10) / 10;
-const toRad = (d: number) => d * Math.PI / 180;
 
-function filledLeaf(sx: number, sy: number, angleDeg: number, L: number, w: number) {
-  const a = toRad(angleDeg), p = a + Math.PI / 2;
-  const tx = sx + L * Math.cos(a), ty = sy + L * Math.sin(a);
-  const lc1x = sx + L * .22 * Math.cos(a) + w * .65 * Math.cos(p);
-  const lc1y = sy + L * .22 * Math.sin(a) + w * .65 * Math.sin(p);
-  const lc2x = sx + L * .78 * Math.cos(a) + w * .95 * Math.cos(p);
-  const lc2y = sy + L * .78 * Math.sin(a) + w * .95 * Math.sin(p);
-  const rc1x = sx + L * .78 * Math.cos(a) - w * .95 * Math.cos(p);
-  const rc1y = sy + L * .78 * Math.sin(a) - w * .95 * Math.sin(p);
-  const rc2x = sx + L * .22 * Math.cos(a) - w * .65 * Math.cos(p);
-  const rc2y = sy + L * .22 * Math.sin(a) - w * .65 * Math.sin(p);
-  return `M${ff(sx)} ${ff(sy)} C${ff(lc1x)} ${ff(lc1y)} ${ff(lc2x)} ${ff(lc2y)} ${ff(tx)} ${ff(ty)} C${ff(rc1x)} ${ff(rc1y)} ${ff(rc2x)} ${ff(rc2y)} ${ff(sx)} ${ff(sy)}Z`;
+/** Curved filled stem from (sx,sy)→(tx,ty), width sw */
+function stemPath(sx: number, sy: number, tx: number, ty: number, sw: number) {
+  const hw = sw / 2;
+  const dx = tx - sx, dy = ty - sy;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const nx = (-dy / len) * hw, ny = (dx / len) * hw;
+  /* gentle S-curve control points */
+  const c1x = sx + dx * 0.28 + nx * 0.15, c1y = sy + dy * 0.28 + ny * 0.15;
+  const c2x = sx + dx * 0.72 - nx * 0.15, c2y = sy + dy * 0.72 - ny * 0.15;
+  return [
+    `M${ff(sx + nx)} ${ff(sy + ny)}`,
+    `C${ff(c1x + nx)} ${ff(c1y + ny)} ${ff(c2x + nx)} ${ff(c2y + ny)} ${ff(tx + nx * 0.35)} ${ff(ty + ny * 0.35)}`,
+    `L${ff(tx - nx * 0.35)} ${ff(ty - ny * 0.35)}`,
+    `C${ff(c2x - nx)} ${ff(c2y - ny)} ${ff(c1x - nx)} ${ff(c1y - ny)} ${ff(sx - nx)} ${ff(sy - ny)}`,
+    "Z",
+  ].join(" ");
 }
 
-function filledStem(
-  x1: number, y1: number, cpx1: number, cpy1: number,
-  cpx2: number, cpy2: number, x2: number, y2: number, w1: number, w2: number
-) {
-  const h1 = w1 / 2, h2 = w2 / 2;
-  return `M${ff(x1-h1)} ${ff(y1)} C${ff(cpx1-h1)} ${ff(cpy1)} ${ff(cpx2-h2)} ${ff(cpy2)} ${ff(x2-h2)} ${ff(y2)} L${ff(x2+h2)} ${ff(y2)} C${ff(cpx2+h2)} ${ff(cpy2)} ${ff(cpx1+h1)} ${ff(cpy1)} ${ff(x1+h1)} ${ff(y1)}Z`;
+/** Filled oval leaf */
+function leafPath(ax: number, ay: number, angleDeg: number, L: number, w: number) {
+  const a = (angleDeg * Math.PI) / 180, p = a + Math.PI / 2;
+  const tx = ax + L * Math.cos(a), ty = ay + L * Math.sin(a);
+  const lc1x = ax + L * 0.24 * Math.cos(a) + w * 0.68 * Math.cos(p);
+  const lc1y = ay + L * 0.24 * Math.sin(a) + w * 0.68 * Math.sin(p);
+  const lc2x = ax + L * 0.76 * Math.cos(a) + w * 0.90 * Math.cos(p);
+  const lc2y = ay + L * 0.76 * Math.sin(a) + w * 0.90 * Math.sin(p);
+  const rc1x = ax + L * 0.76 * Math.cos(a) - w * 0.90 * Math.cos(p);
+  const rc1y = ay + L * 0.76 * Math.sin(a) - w * 0.90 * Math.sin(p);
+  const rc2x = ax + L * 0.24 * Math.cos(a) - w * 0.68 * Math.cos(p);
+  const rc2y = ay + L * 0.24 * Math.sin(a) - w * 0.68 * Math.sin(p);
+  return `M${ff(ax)} ${ff(ay)} C${ff(lc1x)} ${ff(lc1y)} ${ff(lc2x)} ${ff(lc2y)} ${ff(tx)} ${ff(ty)} C${ff(rc1x)} ${ff(rc1y)} ${ff(rc2x)} ${ff(rc2y)} ${ff(ax)} ${ff(ay)}Z`;
 }
 
-function filledPetal(cx: number, cy: number, angleDeg: number, L: number, w: number) {
-  const a = toRad(angleDeg - 90), p = a + Math.PI / 2;
+/** Single filled petal from centre */
+function petalPath(cx: number, cy: number, angleDeg: number, L: number, w: number) {
+  const a = ((angleDeg - 90) * Math.PI) / 180, p = a + Math.PI / 2;
   const tx = cx + L * Math.cos(a), ty = cy + L * Math.sin(a);
-  const lc1x = cx + L * .18 * Math.cos(a) + w * .5 * Math.cos(p);
-  const lc1y = cy + L * .18 * Math.sin(a) + w * .5 * Math.sin(p);
-  const lc2x = cx + L * .75 * Math.cos(a) + w * .95 * Math.cos(p);
-  const lc2y = cy + L * .75 * Math.sin(a) + w * .95 * Math.sin(p);
-  const rc1x = cx + L * .75 * Math.cos(a) - w * .95 * Math.cos(p);
-  const rc1y = cy + L * .75 * Math.sin(a) - w * .95 * Math.sin(p);
-  const rc2x = cx + L * .18 * Math.cos(a) - w * .5 * Math.cos(p);
-  const rc2y = cy + L * .18 * Math.sin(a) - w * .5 * Math.sin(p);
+  const lc1x = cx + L * 0.20 * Math.cos(a) + w * 0.55 * Math.cos(p);
+  const lc1y = cy + L * 0.20 * Math.sin(a) + w * 0.55 * Math.sin(p);
+  const lc2x = cx + L * 0.78 * Math.cos(a) + w * 0.92 * Math.cos(p);
+  const lc2y = cy + L * 0.78 * Math.sin(a) + w * 0.92 * Math.sin(p);
+  const rc1x = cx + L * 0.78 * Math.cos(a) - w * 0.92 * Math.cos(p);
+  const rc1y = cy + L * 0.78 * Math.sin(a) - w * 0.92 * Math.sin(p);
+  const rc2x = cx + L * 0.20 * Math.cos(a) - w * 0.55 * Math.cos(p);
+  const rc2y = cy + L * 0.20 * Math.sin(a) - w * 0.55 * Math.sin(p);
   return `M${ff(cx)} ${ff(cy)} C${ff(lc1x)} ${ff(lc1y)} ${ff(lc2x)} ${ff(lc2y)} ${ff(tx)} ${ff(ty)} C${ff(rc1x)} ${ff(rc1y)} ${ff(rc2x)} ${ff(rc2y)} ${ff(cx)} ${ff(cy)}Z`;
 }
 
-/* ── Sway config ──────────────────────────────────────────────────── */
-const SWAY_CFG = [
-  { x: 157, y: 480, freq: 0.85, phase: 0,   amp: 3.0 },
-  { x: 192, y: 480, freq: 0.62, phase: 1.2, amp: 3.8 },
-  { x: 232, y: 480, freq: 0.77, phase: 2.5, amp: 3.0 },
-];
+/* ═══════════════════════════════════════════════════════════════════ */
+/*  10-flower definitions                                               */
+/*  sx=stem base x, tx/ty=flower tip, sw=stem width, r=petal radius,  */
+/*  pN=petal count, hue=petal colour, cHue=centre hue                  */
+/* ═══════════════════════════════════════════════════════════════════ */
+const FDEFS = [
+  { sx:  20, tx:  16, ty: 438, sw: 2.8, r:  7, pN: 4, hue:  50, cHue: 38  },
+  { sx:  57, tx:  50, ty: 370, sw: 3.8, r: 10, pN: 5, hue: 270, cHue: 285 },
+  { sx:  95, tx:  85, ty: 294, sw: 5.2, r: 13, pN: 6, hue: 340, cHue: 355 },
+  { sx: 133, tx: 121, ty: 220, sw: 7.2, r: 17, pN: 7, hue:  30, cHue:  48 },
+  { sx: 170, tx: 167, ty: 158, sw: 9.2, r: 21, pN: 8, hue: 350, cHue:  12 },
+  { sx: 208, tx: 215, ty: 148, sw: 9.4, r: 22, pN: 8, hue:  55, cHue:  42 },
+  { sx: 246, tx: 254, ty: 212, sw: 7.2, r: 17, pN: 7, hue: 280, cHue: 298 },
+  { sx: 283, tx: 296, ty: 290, sw: 5.2, r: 13, pN: 6, hue: 330, cHue: 350 },
+  { sx: 318, tx: 330, ty: 367, sw: 3.8, r: 10, pN: 5, hue:  40, cHue:  28 },
+  { sx: 345, tx: 354, ty: 430, sw: 2.8, r:  7, pN: 4, hue: 200, cHue: 218 },
+] as const;
 
-/* ── FlowersPage ──────────────────────────────────────────────────── */
+/* Sprouting order: centre-outward */
+const SPROUT_ORDER = [4, 5, 3, 6, 2, 7, 1, 8, 0, 9];
+
+/* Per-flower timing */
+const flowerDelays = FDEFS.map((_, i) => {
+  const order   = SPROUT_ORDER.indexOf(i);
+  const stemDel = order * 0.20;
+  const leafDel = stemDel + 0.70;
+  const petDel  = leafDel + 0.38;
+  return { stem: stemDel, leaf: leafDel, petal: petDel };
+});
+
+/* Sway config (amp inversely proportional to size = outer flowers sway more) */
+const SWAY_CFG = FDEFS.map((f, i) => ({
+  x: f.sx, y: 480,
+  freq:  0.42 + Math.abs(Math.sin(i * 1.9)) * 0.28,
+  phase: i * 0.65,
+  amp:   Math.max(1.2, 5.2 - f.r * 0.13),
+}));
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/*  Pollen particle type                                                */
+/* ═══════════════════════════════════════════════════════════════════ */
+interface PollenParticle {
+  x: number; y: number;
+  vx: number; vy: number;
+  r: number;
+  life: number; maxLife: number;
+  hue: number;
+  alpha: number;
+}
+
+/* ═══════════════════════════════════════════════════════════════════ */
+/*  FlowersPage component                                               */
+/* ═══════════════════════════════════════════════════════════════════ */
 export default function FlowersPage() {
-  const navigate    = useNavigate();
-  const starRef     = useRef<HTMLCanvasElement>(null);
-  const svgRef      = useRef<SVGSVGElement>(null);
-  const swayRef0    = useRef<SVGGElement>(null);
-  const swayRef1    = useRef<SVGGElement>(null);
-  const swayRef2    = useRef<SVGGElement>(null);
-  const swayRefs    = [swayRef0, swayRef1, swayRef2];
-  const mouseRef    = useRef({ x: -9999, y: 0 });
-  const animRef     = useRef(0);
-  const timeRef     = useRef(0);
+  const navigate        = useNavigate();
+  const starRef         = useRef<HTMLCanvasElement>(null);
+  const pollenRef       = useRef<HTMLCanvasElement>(null);
+  const svgRef          = useRef<SVGSVGElement>(null);
+  const swayGroupRefs   = useRef<(SVGGElement | null)[]>(Array(10).fill(null));
+  const mouseRef        = useRef({ x: -9999, y: 0 });
+  const animRef         = useRef(0);
+  const pollenAnimRef   = useRef(0);
+  const timeRef         = useRef(0);
+  const showFlowersRef  = useRef(false);
 
-  const [textPhase, setTextPhase]     = useState<0 | 1 | 2>(0);
+  const [textPhase,   setTextPhase]   = useState<0 | 1 | 2>(0);
   const [showFlowers, setShowFlowers] = useState(false);
-  const [allDone, setAllDone]         = useState(false); // triggers pulse+sway
+  const [allDone,     setAllDone]     = useState(false);
 
-  /* ── Text + sprout sequence ─────────────────────────────────────── */
+  /* ── Timing sequence ─────────────────────────────────────────────── */
   useEffect(() => {
     const t1 = setTimeout(() => setTextPhase(1), 350);
     const t2 = setTimeout(() => setTextPhase(2), 3000);
-    const t3 = setTimeout(() => setShowFlowers(true), 4600);
-    // All elements finish sprouting after ~4.5 s of showFlowers
-    const t4 = setTimeout(() => setAllDone(true), 4600 + 4500);
+    const t3 = setTimeout(() => { setShowFlowers(true); showFlowersRef.current = true; }, 4600);
+    const t4 = setTimeout(() => setAllDone(true), 4600 + 4800);
     return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, []);
 
-  /* ── Mouse / touch tracking ─────────────────────────────────────── */
+  /* ── Mouse tracking ──────────────────────────────────────────────── */
   useEffect(() => {
-    const onMouse = (e: MouseEvent) => { mouseRef.current = { x: e.clientX, y: e.clientY }; };
-    const onTouch = (e: TouchEvent) => {
+    const onM = (e: MouseEvent) => (mouseRef.current = { x: e.clientX, y: e.clientY });
+    const onT = (e: TouchEvent) => {
       if (e.touches[0]) mouseRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     };
-    window.addEventListener("mousemove", onMouse);
-    window.addEventListener("touchmove", onTouch, { passive: true });
-    return () => {
-      window.removeEventListener("mousemove", onMouse);
-      window.removeEventListener("touchmove", onTouch);
-    };
+    window.addEventListener("mousemove", onM);
+    window.addEventListener("touchmove", onT, { passive: true });
+    return () => { window.removeEventListener("mousemove", onM); window.removeEventListener("touchmove", onT); };
   }, []);
 
-  /* ── Depth-layered starfield ────────────────────────────────────── */
+  /* ── Cinematic night sky ──────────────────────────────────────────── */
   useEffect(() => {
-    const canvas = starRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d")!;
+    const canvas = starRef.current!;
+    const ctx    = canvas.getContext("2d")!;
+
     const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
     resize();
     window.addEventListener("resize", resize);
 
+    /* Star layers */
     const mkLayer = (n: number, minR: number, maxR: number, minOp: number, maxOp: number, minF: number, maxF: number) =>
       Array.from({ length: n }, () => ({
         x: Math.random() * canvas.width, y: Math.random() * canvas.height,
@@ -106,29 +161,203 @@ export default function FlowersPage() {
         base: minOp + Math.random() * (maxOp - minOp),
         freq: minF  + Math.random() * (maxF  - minF),
         phase: Math.random() * Math.PI * 2,
+        hue:  Math.random() < 0.12 ? 200 + Math.random() * 40 : 0, // few blue-white stars
       }));
 
-    const far  = mkLayer(170, 0.08, 0.30, 0.04, 0.18, 2.2, 5.0);
-    const mid  = mkLayer(90,  0.38, 0.85, 0.12, 0.42, 0.8, 2.2);
-    const near = mkLayer(35,  0.95, 2.30, 0.40, 0.82, 0.25, 0.9);
+    const far    = mkLayer(280, 0.06, 0.28, 0.03, 0.16, 2.0, 5.5);
+    const mid    = mkLayer(130, 0.35, 0.82, 0.10, 0.40, 0.7, 2.0);
+    const near   = mkLayer(55,  0.90, 2.20, 0.35, 0.78, 0.2, 0.85);
+    const bright = mkLayer(10,  2.50, 4.00, 0.65, 1.00, 0.08, 0.28);
+
+    /* Nebula blobs: (cx, cy, rx, ry, r, g, b, maxA) */
+    const nebulae = [
+      { cx: 0.12, cy: 0.18, rx: 280, ry: 200, r: 20,  g: 10,  b: 55,  a: 0.22 },
+      { cx: 0.85, cy: 0.12, rx: 240, ry: 180, r: 45,  g: 12,  b: 80,  a: 0.18 },
+      { cx: 0.55, cy: 0.35, rx: 320, ry: 220, r: 12,  g: 8,   b: 40,  a: 0.12 },
+      { cx: 0.72, cy: 0.60, rx: 200, ry: 160, r: 60,  g: 20,  b: 65,  a: 0.10 },
+    ];
+
+    /* Shooting-star state */
+    type Shoot = { sx: number; sy: number; vx: number; vy: number; life: number; maxLife: number };
+    let shoot: Shoot | null = null;
+    let shootCooldown = 200 + Math.floor(Math.random() * 240);
 
     let t = 0, raf = 0;
+
     const draw = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      for (const stars of [far, mid, near]) {
-        for (const s of stars) {
+      const w = canvas.width, h = canvas.height;
+
+      /* Sky gradient background */
+      const bg = ctx.createLinearGradient(0, 0, 0, h);
+      bg.addColorStop(0,   "#000008");
+      bg.addColorStop(0.5, "#030010");
+      bg.addColorStop(1,   "#06000e");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, w, h);
+
+      /* Nebula */
+      nebulae.forEach(n => {
+        ctx.save();
+        ctx.translate(n.cx * w, n.cy * h);
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, 1);
+        grad.addColorStop(0, `rgba(${n.r},${n.g},${n.b},${n.a})`);
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.scale(n.rx, n.ry);
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      });
+
+      /* Stars */
+      for (const layers of [far, mid, near, bright]) {
+        for (const s of layers) {
           const op = s.base * (0.15 + 0.85 * (0.5 + 0.5 * Math.sin(t * s.freq + s.phase)));
           ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255,255,255,${op.toFixed(3)})`; ctx.fill();
+          if (s.hue) {
+            ctx.fillStyle = `hsla(${s.hue},60%,90%,${op.toFixed(3)})`;
+          } else {
+            ctx.fillStyle = `rgba(255,255,255,${op.toFixed(3)})`;
+          }
+          ctx.fill();
         }
       }
-      t += 0.018; raf = requestAnimationFrame(draw);
+
+      /* Bright-star sparkle cross */
+      bright.forEach(s => {
+        const op = s.base * (0.5 + 0.5 * Math.sin(t * s.freq + s.phase)) * 0.55;
+        ctx.save();
+        ctx.globalAlpha = op;
+        ctx.strokeStyle = "rgba(255,255,255,1)";
+        ctx.lineWidth = 0.5;
+        const len = s.r * 4;
+        ctx.beginPath();
+        ctx.moveTo(s.x - len, s.y); ctx.lineTo(s.x + len, s.y);
+        ctx.moveTo(s.x, s.y - len); ctx.lineTo(s.x, s.y + len);
+        ctx.stroke();
+        ctx.restore();
+      });
+
+      /* Shooting star */
+      shootCooldown--;
+      if (shootCooldown <= 0 && !shoot) {
+        const angle = -(25 + Math.random() * 25) * Math.PI / 180;
+        const speed = 14 + Math.random() * 10;
+        shoot = {
+          sx: Math.random() * w * 0.6,
+          sy: Math.random() * h * 0.35,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          life: 0, maxLife: 14 + Math.floor(Math.random() * 10),
+        };
+        shootCooldown = 280 + Math.floor(Math.random() * 320);
+      }
+      if (shoot) {
+        const { sx, sy, vx, vy, life, maxLife } = shoot;
+        const progress = life / maxLife;
+        const headX = sx + vx * life, headY = sy + vy * life;
+        const tailX = headX - vx * 10, tailY = headY - vy * 10;
+        const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
+        grad.addColorStop(0, "rgba(255,255,255,0)");
+        grad.addColorStop(1, `rgba(255,255,255,${(1 - progress).toFixed(2)})`);
+        ctx.save();
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath(); ctx.moveTo(tailX, tailY); ctx.lineTo(headX, headY);
+        ctx.stroke();
+        ctx.restore();
+        shoot.life++;
+        if (shoot.life > maxLife) shoot = null;
+      }
+
+      t += 0.016;
+      raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
   }, []);
 
-  /* ── Organic sway + mouse-tilt (starts only after allDone) ─────── */
+  /* ── Pollen particles from flower tips ───────────────────────────── */
+  useEffect(() => {
+    const canvas = pollenRef.current!;
+    const ctx    = canvas.getContext("2d")!;
+
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const particles: PollenParticle[] = [];
+    let frameCount = 0;
+    let elapsedSinceShow = 0; // frames since showFlowers
+
+    /* Map SVG viewBox coords → screen */
+    const tipScreen = (tx: number, ty: number) => {
+      const svgW  = Math.min(window.innerWidth, 420);
+      const svgH  = svgW * (490 / 360);
+      const scale = svgW / 360;
+      const offX  = (window.innerWidth - svgW) / 2;
+      const offY  = window.innerHeight - svgH;
+      return { x: offX + tx * scale, y: offY + ty * scale };
+    };
+
+    let raf = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      frameCount++;
+
+      if (showFlowersRef.current) elapsedSinceShow++;
+
+      /* Spawn pollen once each flower has bloomed */
+      if (elapsedSinceShow > 0) {
+        FDEFS.forEach((f, fi) => {
+          const petalDelayFrames = Math.ceil(flowerDelays[fi].petal * 60) + 25;
+          if (elapsedSinceShow < petalDelayFrames) return;
+          /* Larger flowers emit more pollen */
+          const emitRate = f.r > 18 ? 0.25 : f.r > 12 ? 0.12 : 0.06;
+          if (Math.random() > emitRate) return;
+          const tip = tipScreen(f.tx, f.ty);
+          particles.push({
+            x: tip.x + (Math.random() - 0.5) * f.r * 0.6,
+            y: tip.y + (Math.random() - 0.5) * f.r * 0.4,
+            vx: (Math.random() - 0.5) * 0.65,
+            vy: -(Math.random() * 0.55 + 0.18),
+            r:  1.2 + Math.random() * 2.2,
+            life: 0,
+            maxLife: 90 + Math.floor(Math.random() * 100),
+            hue: f.hue,
+            alpha: 0,
+          });
+        });
+      }
+
+      /* Draw pollen */
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.life++;
+        p.x += p.vx + Math.sin(p.life * 0.055 + i) * 0.35;
+        p.y += p.vy;
+
+        const fadeIn  = Math.min(p.life / 18, 1);
+        const fadeOut = Math.max(0, 1 - Math.max(0, p.life - p.maxLife + 25) / 25);
+        p.alpha = fadeIn * fadeOut * 0.75;
+
+        if (p.life > p.maxLife) { particles.splice(i, 1); continue; }
+
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.shadowColor = `hsl(${p.hue}, 85%, 80%)`;
+        ctx.shadowBlur  = p.r * 4;
+        ctx.fillStyle   = `hsl(${p.hue}, 75%, 88%)`;
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Organic sway (after allDone) ───────────────────────────────── */
   useEffect(() => {
     if (!allDone) return;
     const loop = () => {
@@ -138,128 +367,104 @@ export default function FlowersPage() {
         let mouseTilt = 0;
         if (svg && mouseRef.current.x > -9000) {
           const rect = svg.getBoundingClientRect();
-          const mx = ((mouseRef.current.x - rect.left) / rect.width) * 360;
-          mouseTilt = Math.max(-4, Math.min(4, ((cfg.x - mx) / 110) * 2.5));
+          const mx   = ((mouseRef.current.x - rect.left) / rect.width) * 360;
+          mouseTilt  = Math.max(-3.5, Math.min(3.5, ((cfg.x - mx) / 130) * 2.2));
         }
         const angle = Math.sin(t * cfg.freq + cfg.phase) * cfg.amp + mouseTilt;
-        swayRefs[i].current?.setAttribute("transform", `rotate(${angle.toFixed(3)},${cfg.x},${cfg.y})`);
+        swayGroupRefs.current[i]?.setAttribute("transform", `rotate(${angle.toFixed(3)},${cfg.x},${cfg.y})`);
       });
       animRef.current = requestAnimationFrame(loop);
     };
     animRef.current = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animRef.current);
-  }, [allDone]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [allDone]);
 
-  /* ── Art data ───────────────────────────────────────────────────── */
+  /* ── Art: 10 flowers + grass ─────────────────────────────────────── */
   const art = useMemo(() => {
-    const makePetals = (cx: number, cy: number, np: number, L: number, w: number) =>
-      [0, 1, 2].flatMap(layer =>
-        Array.from({ length: np }, (_, i) => ({
-          d: filledPetal(cx, cy, i * (360 / np) + layer * (360 / np / 3), L * (.82 + layer * .1), w * (.88 + layer * .08)),
-          op: 0.42 + layer * .28, cx, cy,
-        }))
-      );
+    /* Grass blades (deterministic positions) */
+    const seed = (n: number) => { const x = Math.sin(n * 9301 + 49297) * 233280; return x - Math.floor(x); };
+    const grass = Array.from({ length: 22 }, (_, i) => {
+      const sx = 6 + i * 16;
+      const sy = 480;
+      const a  = -88 + seed(i * 3) * 22 - 11;
+      const L  = 38 + seed(i * 3 + 1) * 40;
+      const w  = 5  + seed(i * 3 + 2) * 5;
+      return { d: leafPath(sx, sy, a, L, w), sx, sy };
+    });
 
-    const grass = [
-      { sx:145, sy:480, a:-98,  L:60, w:8  },
-      { sx:155, sy:480, a:-91,  L:74, w:10 },
-      { sx:166, sy:479, a:-83,  L:54, w:7  },
-      { sx:178, sy:479, a:-96,  L:78, w:11 },
-      { sx:192, sy:480, a:-89,  L:67, w:9  },
-      { sx:206, sy:480, a:-79,  L:62, w:9  },
-      { sx:219, sy:479, a:-93,  L:72, w:10 },
-      { sx:231, sy:479, a:-85,  L:57, w:8  },
-      { sx:243, sy:478, a:-100, L:64, w:8  },
-    ].map(g => ({ d: filledLeaf(g.sx, g.sy, g.a, g.L, g.w), sx: g.sx, sy: g.sy }));
+    /* Flowers */
+    const flowers = FDEFS.map((f, i) => {
+      const sy = 480;
+      const dx = f.tx - f.sx, dy = f.ty - sy;
+      const stemLen = Math.sqrt(dx * dx + dy * dy);
+      const stemAngle = Math.atan2(dy, dx) * (180 / Math.PI); // typically ~-80 to -100
 
-    /* Three stems — centre (si=1), left (si=0), right (si=2) */
-    const stems = [
-      /* LEFT */
-      {
-        d: filledStem(157,480, 150,395, 132,310, 112,218, 12,5.5),
-        bx: 157, by: 480,
-        leaves: [
-          { d: filledLeaf(136,358,-130,56,26), sx:136, sy:358, rotDir: 1  },
-          { d: filledLeaf(124,285,-42, 50,23), sx:124, sy:285, rotDir: -1 },
-          { d: filledLeaf(130,318,-155,38,18), sx:130, sy:318, rotDir: 1  },
-        ],
-        flower: { cx:112, cy:204, petals: makePetals(112,204,5,32,15), cr:9 },
-        /* Timing: center=0, left=1, right=2 */
-        stemDelay:  0.25,
-        leafDelay:  0.90,
-        petalDelay: 1.55,
-      },
-      /* CENTRE */
-      {
-        d: filledStem(192,480, 190,385, 192,280, 192,162, 15,7),
-        bx: 192, by: 480,
-        leaves: [
-          { d: filledLeaf(192,360,-112,62,28), sx:192, sy:360, rotDir: 1  },
-          { d: filledLeaf(192,278,-68, 56,25), sx:192, sy:278, rotDir: -1 },
-          { d: filledLeaf(192,318,-95, 44,20), sx:192, sy:318, rotDir: 1  },
-        ],
-        flower: { cx:192, cy:148, petals: makePetals(192,148,7,38,18), cr:11 },
-        stemDelay:  0.0,
-        leafDelay:  0.65,
-        petalDelay: 1.30,
-      },
-      /* RIGHT */
-      {
-        d: filledStem(232,480, 240,395, 258,310, 278,218, 12,5.5),
-        bx: 232, by: 480,
-        leaves: [
-          { d: filledLeaf(253,352,-48, 55,25), sx:253, sy:352, rotDir: -1 },
-          { d: filledLeaf(265,282,-148,50,23), sx:265, sy:282, rotDir: 1  },
-          { d: filledLeaf(258,318,-22, 38,18), sx:258, sy:318, rotDir: -1 },
-        ],
-        flower: { cx:278, cy:204, petals: makePetals(278,204,5,32,15), cr:9 },
-        stemDelay:  0.5,
-        leafDelay:  1.10,
-        petalDelay: 1.65,
-      },
-    ];
+      const lScale = f.sw / 5;
 
-    return { grass, stems };
+      /* Leaves — 2 for medium+, 1 for small */
+      const leaves: { d: string; ax: number; ay: number; rotDir: number }[] = [];
+      const addLeaf = (t: number, side: 1 | -1) => {
+        const ax = f.sx + t * dx, ay = sy + t * dy;
+        const ang = stemAngle + side * 68;
+        const L   = stemLen * 0.22 * lScale;
+        const w   = stemLen * 0.10 * lScale;
+        leaves.push({ d: leafPath(ax, ay, ang, L, w), ax, ay, rotDir: side });
+      };
+      addLeaf(0.65, 1);
+      if (f.r >= 10) addLeaf(0.38, -1);
+
+      /* Petals — 2 layers */
+      const petals: { d: string; op: number; cx: number; cy: number }[] = [];
+      const cx = f.tx, cy = f.ty;
+      [0, 1].forEach(layer => {
+        for (let p = 0; p < f.pN; p++) {
+          const ang = (p / f.pN) * 360 + layer * (180 / f.pN);
+          const L   = f.r * (0.88 + layer * 0.14);
+          const w   = f.r * (0.46 + layer * 0.06);
+          petals.push({ d: petalPath(cx, cy, ang, L, w), op: 0.55 + layer * 0.38, cx, cy });
+        }
+      });
+
+      return { ...f, i, stemD: stemPath(f.sx, sy, f.tx, f.ty, f.sw), leaves, petals, cx: f.tx, cy: f.ty };
+    });
+
+    return { grass, flowers };
   }, []);
 
-  /* ── Animation helpers ──────────────────────────────────────────── */
-  /* Stem: grows upward from base — scaleY 0→1 */
-  const stemAnim = (bx: number, delay: number) => ({
+  /* ── Framer Motion animation props ───────────────────────────────── */
+  const stemAnim  = (sx: number, delay: number) => ({
     initial: { scaleY: 0, opacity: 0 },
     animate: showFlowers ? { scaleY: 1, opacity: 1 } : {},
-    transition: { duration: 0.75, delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] },
-    style: { transformOrigin: `${bx}px 480px` },
+    transition: { duration: 0.72, delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] },
+    style: { transformOrigin: `${sx}px 480px` },
   });
 
-  /* Leaf: snaps open from attachment point with slight rotation */
-  const leafAnim = (sx: number, sy: number, rotDir: number, delay: number) => ({
-    initial: { scale: 0, rotate: rotDir * 35, opacity: 0 },
+  const leafAnim  = (ax: number, ay: number, rotDir: number, delay: number) => ({
+    initial: { scale: 0, rotate: rotDir * 38, opacity: 0 },
     animate: showFlowers ? { scale: 1, rotate: 0, opacity: 1 } : {},
-    transition: { duration: 0.38, delay, ease: [0.34, 1.56, 0.64, 1] as [number,number,number,number] },
-    style: { transformOrigin: `${sx}px ${sy}px` },
+    transition: { duration: 0.36, delay, ease: [0.34, 1.56, 0.64, 1] as [number,number,number,number] },
+    style: { transformOrigin: `${ax}px ${ay}px` },
   });
 
-  /* Petal: blooms outward from flower centre */
   const petalAnim = (cx: number, cy: number, delay: number) => ({
     initial: { scale: 0, opacity: 0 },
     animate: showFlowers ? { scale: 1, opacity: 1 } : {},
-    transition: { duration: 0.32, delay, ease: [0.34, 1.56, 0.64, 1] as [number,number,number,number] },
+    transition: { duration: 0.30, delay, ease: [0.34, 1.56, 0.64, 1] as [number,number,number,number] },
     style: { transformOrigin: `${cx}px ${cy}px` },
   });
 
-  /* Grass blade: sprouts up from ground */
   const grassAnim = (sx: number, sy: number, delay: number) => ({
     initial: { scaleY: 0, opacity: 0 },
     animate: showFlowers ? { scaleY: 1, opacity: 1 } : {},
-    transition: { duration: 0.30, delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] },
+    transition: { duration: 0.28, delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] },
     style: { transformOrigin: `${sx}px ${sy}px` },
   });
 
-  /* ── Render ─────────────────────────────────────────────────────── */
+  /* ── Render ──────────────────────────────────────────────────────── */
   return (
-    <div className="fixed inset-0 overflow-hidden select-none" style={{ background: "#000" }}>
+    <div className="fixed inset-0 overflow-hidden select-none" style={{ background: "#000008" }}>
 
-      {/* Back */}
+      {/* Back button */}
       <motion.button
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
         onClick={() => navigate("/letter")}
@@ -268,14 +473,14 @@ export default function FlowersPage() {
         style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)" }}
       >←</motion.button>
 
-      {/* Starfield */}
-      <canvas ref={starRef} className="fixed inset-0 pointer-events-none z-0" />
+      {/* Night sky canvas */}
+      <canvas ref={starRef}  className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }} />
 
-      {/* ── Text — top-third of screen ───────────────────────────── */}
-      <div
-        className="fixed inset-x-0 z-20 flex justify-center pointer-events-none"
-        style={{ top: "18%" }}
-      >
+      {/* Pollen canvas */}
+      <canvas ref={pollenRef} className="fixed inset-0 pointer-events-none" style={{ zIndex: 15 }} />
+
+      {/* ── "I L O V E U" text ─────────────────────────────────────── */}
+      <div className="fixed inset-x-0 z-20 flex justify-center pointer-events-none" style={{ top: "18%" }}>
         <AnimatePresence mode="wait">
           {textPhase === 1 && (
             <motion.p key="t1"
@@ -305,16 +510,8 @@ export default function FlowersPage() {
         </AnimatePresence>
       </div>
 
-      {/* ── Flower SVG ───────────────────────────────────────────── */}
-      <div
-        className="fixed inset-x-0 bottom-0 z-10 flex justify-center pointer-events-none"
-        style={{
-          filter:
-            "drop-shadow(0 0 14px rgba(255,255,255,0.55))" +
-            " drop-shadow(0 0 45px rgba(255,255,255,0.20))" +
-            " drop-shadow(0 0 100px rgba(255,255,255,0.09))",
-        }}
-      >
+      {/* ── Flower SVG ──────────────────────────────────────────────── */}
+      <div className="fixed inset-x-0 bottom-0 flex justify-center pointer-events-none" style={{ zIndex: 10 }}>
         <svg
           ref={svgRef}
           viewBox="0 0 360 490"
@@ -322,81 +519,95 @@ export default function FlowersPage() {
           style={{ width: "100%", maxWidth: 420, overflow: "visible" }}
         >
           <defs>
-            {/* Cinema glow on flower heads */}
-            <filter id="flowerHalo" x="-160%" y="-160%" width="420%" height="420%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="halo"/>
-              <feGaussianBlur in="SourceGraphic" stdDeviation="9"  result="mid"/>
-              <feGaussianBlur in="SourceGraphic" stdDeviation="3"  result="close"/>
+            {/* Per-flower glow filter — colour comes from the fill itself */}
+            <filter id="flwGlow" x="-180%" y="-180%" width="460%" height="460%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="big"/>
+              <feGaussianBlur in="SourceGraphic" stdDeviation="6"  result="mid"/>
+              <feGaussianBlur in="SourceGraphic" stdDeviation="2"  result="tight"/>
               <feMerge>
-                <feMergeNode in="halo"/>
-                <feMergeNode in="mid"/>
-                <feMergeNode in="close"/>
-                <feMergeNode in="SourceGraphic"/>
+                <feMergeNode in="big"/><feMergeNode in="mid"/>
+                <feMergeNode in="tight"/><feMergeNode in="SourceGraphic"/>
               </feMerge>
+            </filter>
+            {/* Leaf vein highlight */}
+            <filter id="leafGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="b"/>
+              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
             </filter>
           </defs>
 
-          {/* ── GRASS — sprouts simultaneous with bloom ── */}
+          {/* GRASS */}
           {art.grass.map((g, i) => (
             <motion.path
               key={`gr${i}`} d={g.d}
-              fill={`rgba(255,255,255,${(0.38 + i * 0.025).toFixed(3)})`}
-              {...grassAnim(g.sx, g.sy, 1.30 + i * 0.04)}
+              fill={`hsl(${122 + (i % 4) * 4}, ${50 + (i % 3) * 5}%, ${28 + (i % 4) * 3}%)`}
+              {...grassAnim(g.sx, g.sy, 1.35 + i * 0.03)}
             />
           ))}
 
-          {/* ── THREE STEMS with sequential sprouting ── */}
-          {art.stems.map((stem, si) => (
-            <g key={`sg${si}`} ref={swayRefs[si]}>
+          {/* 10 FLOWERS */}
+          {art.flowers.map((fl, fi) => {
+            const delays = flowerDelays[fi];
+            const petalHue  = fl.hue;
+            const centerHue = fl.cHue;
 
-              {/* 1. STEM — grows upward from base */}
-              <motion.path
-                d={stem.d}
-                fill={`rgba(255,255,255,${(0.80 + si * 0.06).toFixed(2)})`}
-                {...stemAnim(stem.bx, stem.stemDelay)}
-              />
-
-              {/* 2. LEAVES — unfurl sequentially from stem nodes */}
-              {stem.leaves.map((l, li) => (
+            return (
+              <g
+                key={`fl${fi}`}
+                ref={(el) => { swayGroupRefs.current[fi] = el; }}
+              >
+                {/* 1. STEM — green, grows from base */}
                 <motion.path
-                  key={`lf${li}`} d={l.d}
-                  fill="rgba(255,255,255,0.65)"
-                  {...leafAnim(l.sx, l.sy, l.rotDir, stem.leafDelay + li * 0.18)}
+                  d={fl.stemD}
+                  fill={`hsl(125, ${52 + fi * 0.5}%, ${24 + fi * 0.3}%)`}
+                  {...stemAnim(fl.sx, delays.stem)}
                 />
-              ))}
 
-              {/* 3. FLOWER HEAD — blooms at tip after stem is tall */}
-              <g filter="url(#flowerHalo)">
-                {/* Breathing pulse once all done */}
-                <motion.g
-                  animate={allDone ? {
-                    scale:   [1, 1.07, 1, 1.05, 1],
-                    opacity: [0.92, 1, 0.92, 1, 0.92],
-                  } : {}}
-                  transition={{
-                    duration: 3.2 + si * 0.55,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                  }}
-                  style={{ transformOrigin: `${stem.flower.cx}px ${stem.flower.cy}px` }}
-                >
-                  {stem.flower.petals.map((p, pi) => (
-                    <motion.path
-                      key={`pt${pi}`} d={p.d}
-                      fill={`rgba(255,255,255,${p.op.toFixed(2)})`}
-                      {...petalAnim(p.cx, p.cy, stem.petalDelay + pi * 0.028)}
-                    />
-                  ))}
-                  <motion.circle
-                    cx={stem.flower.cx} cy={stem.flower.cy} r={stem.flower.cr}
-                    fill="rgba(255,255,255,1)"
-                    {...petalAnim(stem.flower.cx, stem.flower.cy, stem.petalDelay + stem.flower.petals.length * 0.028)}
+                {/* 2. LEAVES — green, snap open */}
+                {fl.leaves.map((l, li) => (
+                  <motion.path
+                    key={`lf${li}`} d={l.d}
+                    fill={`hsl(${120 + li * 8}, 55%, ${30 + li * 4}%)`}
+                    filter="url(#leafGlow)"
+                    {...leafAnim(l.ax, l.ay, l.rotDir, delays.leaf + li * 0.17)}
                   />
-                </motion.g>
-              </g>
+                ))}
 
-            </g>
-          ))}
+                {/* 3. FLOWER HEAD — coloured, blooms */}
+                <g filter="url(#flwGlow)">
+                  <motion.g
+                    animate={allDone ? {
+                      scale:   [1, 1.08, 1, 1.06, 1],
+                      opacity: [0.93, 1, 0.93, 1, 0.93],
+                    } : {}}
+                    transition={{ duration: 3.0 + fi * 0.38, repeat: Infinity, ease: "easeInOut" }}
+                    style={{ transformOrigin: `${fl.cx}px ${fl.cy}px` }}
+                  >
+                    {/* Petals */}
+                    {fl.petals.map((p, pi) => (
+                      <motion.path
+                        key={`pt${pi}`} d={p.d}
+                        fill={`hsla(${petalHue}, 80%, 84%, ${p.op.toFixed(2)})`}
+                        {...petalAnim(p.cx, p.cy, delays.petal + pi * 0.026)}
+                      />
+                    ))}
+                    {/* Centre */}
+                    <motion.circle
+                      cx={fl.cx} cy={fl.cy} r={fl.r * 0.38}
+                      fill={`hsl(${centerHue}, 92%, 68%)`}
+                      {...petalAnim(fl.cx, fl.cy, delays.petal + fl.petals.length * 0.026)}
+                    />
+                    {/* Centre highlight */}
+                    <motion.circle
+                      cx={fl.cx - fl.r * 0.09} cy={fl.cy - fl.r * 0.09} r={fl.r * 0.14}
+                      fill="rgba(255,255,255,0.55)"
+                      {...petalAnim(fl.cx, fl.cy, delays.petal + fl.petals.length * 0.026 + 0.05)}
+                    />
+                  </motion.g>
+                </g>
+              </g>
+            );
+          })}
         </svg>
       </div>
     </div>
