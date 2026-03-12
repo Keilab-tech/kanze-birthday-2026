@@ -270,9 +270,9 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
        * The charge requirement means a single loud spike (keyboard click,
        * cough) won't accidentally extinguish the flame on PC.
        */
-      const LOW  = 15;    // no reaction below this
-      const HIGH = 30;    // sustained-blow zone above this
-      const NEEDED = 80;  // charge required to extinguish (~0.5–1 s of blowing)
+      const LOW  = 13;    // no reaction below this
+      const HIGH = 22;    // sustained-blow zone above this (lower = easier on Android)
+      const NEEDED = 55;  // charge required to extinguish (~0.4–0.7 s of real blowing)
 
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
@@ -282,20 +282,20 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
 
         if (avg < LOW) {
           /* Silence — drain charge and reset */
-          blowChargeRef.current = Math.max(0, blowChargeRef.current - 4);
+          blowChargeRef.current = Math.max(0, blowChargeRef.current - 3);
           readyForNextBlowRef.current = true;
           setBlowLevel(0);
           setFlameIntensity(1);
         } else if (avg < HIGH) {
           /* Wiggle zone — flame reacts but charge slowly drains */
           const level = (avg - LOW) / (HIGH - LOW);
-          blowChargeRef.current = Math.max(0, blowChargeRef.current - 1);
+          blowChargeRef.current = Math.max(0, blowChargeRef.current - 0.5);
           setBlowLevel(level);
           setFlameIntensity(Math.max(0.65, 1 - level * 0.35));
         } else {
           /* Sustained blow — accumulate charge */
           const extra = avg - HIGH;
-          blowChargeRef.current = Math.min(NEEDED + 1, blowChargeRef.current + extra * 0.6);
+          blowChargeRef.current = Math.min(NEEDED + 1, blowChargeRef.current + extra * 0.8);
           setBlowLevel(1);
           setFlameIntensity(Math.max(0.25, 0.6 - (extra / 60)));
 
