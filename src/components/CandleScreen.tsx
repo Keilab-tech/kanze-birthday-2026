@@ -65,11 +65,42 @@ function useProcessedCake(src: string): string {
 }
 
 /* ── Realistic CSS flame ─────────────────────────────────────────── */
-const RealisticFlame = ({ intensity }: { intensity: number }) => {
+/*
+ * blowLevel 0–1: how hard the user is currently blowing.
+ * At 0 the flame burns normally; at 1 it thrashes wildly sideways.
+ */
+const RealisticFlame = ({
+  intensity,
+  blowLevel = 0,
+}: {
+  intensity: number;
+  blowLevel?: number;
+}) => {
   if (intensity <= 0) return null;
   const h = Math.round(65 * intensity);
+  const tilt = blowLevel * 22;           // max tilt degrees
+  const flickerDur = Math.max(0.18, 0.9 - blowLevel * 0.65); // faster when blowing
+
   return (
-    <div style={{ position: "relative", width: "40px", height: `${h + 10}px` }}>
+    /* Outer wrapper tilts the whole flame */
+    <motion.div
+      animate={
+        blowLevel > 0.08
+          ? { rotate: [-tilt * 0.5, tilt, -tilt * 0.8, tilt * 0.6, -tilt * 0.4, 0] }
+          : { rotate: 0 }
+      }
+      transition={{
+        duration: flickerDur,
+        repeat: blowLevel > 0.08 ? Infinity : 0,
+        ease: "easeInOut",
+      }}
+      style={{
+        position: "relative",
+        width: "40px",
+        height: `${h + 10}px`,
+        transformOrigin: "bottom center",
+      }}
+    >
       <motion.div
         animate={{ opacity: [0.45, 0.72, 0.38, 0.62], scale: [1, 1.14, 0.92, 1.08] }}
         transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
@@ -85,11 +116,15 @@ const RealisticFlame = ({ intensity }: { intensity: number }) => {
       />
       <motion.div
         animate={{
-          scaleX: [1, 0.87, 1.11, 0.92, 1.05, 1],
-          skewX: ["0deg", "5deg", "-4deg", "3deg", "-2deg", "0deg"],
+          scaleX: blowLevel > 0.08
+            ? [1, 0.6, 1.3, 0.7, 1.2, 1]
+            : [1, 0.87, 1.11, 0.92, 1.05, 1],
+          skewX: blowLevel > 0.08
+            ? [`0deg`, `${tilt * 0.5}deg`, `-${tilt * 0.6}deg`, `${tilt * 0.4}deg`, `0deg`]
+            : ["0deg", "5deg", "-4deg", "3deg", "-2deg", "0deg"],
           scaleY: [1, 1.06, 0.94, 1.04, 0.97, 1],
         }}
-        transition={{ duration: 0.92, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: flickerDur, repeat: Infinity, ease: "easeInOut" }}
         style={{
           position: "absolute", bottom: 0, left: "50%",
           transform: "translateX(-50%)",
@@ -124,37 +159,64 @@ const RealisticFlame = ({ intensity }: { intensity: number }) => {
           opacity: intensity,
         }}
       />
-    </div>
+    </motion.div>
   );
 };
 
 /* ── Smoke trail ─────────────────────────────────────────────────── */
-const SMOKE = [
-  { dx:  0,  delay: 0.0,  dur: 4.8, size: 14 },
-  { dx: -10, delay: 0.25, dur: 5.2, size: 12 },
-  { dx:  11, delay: 0.5,  dur: 4.4, size: 10 },
-  { dx: -5,  delay: 0.75, dur: 5.5, size: 16 },
-  { dx:  8,  delay: 1.0,  dur: 4.6, size: 11 },
-  { dx: -3,  delay: 1.3,  dur: 5.0, size: 13 },
-  { dx:  5,  delay: 0.15, dur: 5.8, size: 9  },
-  { dx: -8,  delay: 0.65, dur: 4.2, size: 15 },
-];
+/*
+ * 14 particles rise 300 px from the wick. Each follows a unique
+ * curling lateral path so the column looks organic. Particles start
+ * tiny (~8 px) and bloom to 80-100 px wide, mimicking real smoke
+ * dissipation. Opacity peaks early then fades completely.
+ */
+const SMOKE_PARTICLES = [
+  { delay:0.00, dur:6.0, x:[0,-10,-22,-10,-30], sz:8  },
+  { delay:0.14, dur:6.5, x:[0, 12, 24, 16, 32], sz:7  },
+  { delay:0.28, dur:5.8, x:[0, -5, 14,-18, 10], sz:9  },
+  { delay:0.42, dur:7.0, x:[0, 18, 8, 28,  2 ], sz:6  },
+  { delay:0.58, dur:6.2, x:[0,-20,-8,-30,-12], sz:9  },
+  { delay:0.72, dur:6.8, x:[0,  8, 25, 5, 35 ], sz:7  },
+  { delay:0.88, dur:5.5, x:[0,-15, 5,-28,  8 ], sz:8  },
+  { delay:1.05, dur:7.2, x:[0, 22,-5, 32, -8 ], sz:6  },
+  { delay:0.22, dur:6.3, x:[0,-8,-20,-5,-32 ], sz:9  },
+  { delay:0.50, dur:5.9, x:[0, 10,-15, 22,-10], sz:7  },
+  { delay:0.78, dur:6.6, x:[0,-18, 8,-25, 15 ], sz:8  },
+  { delay:1.10, dur:7.5, x:[0, 5, 28,-8, 36 ], sz:7  },
+  { delay:0.35, dur:6.1, x:[0,-12,-28,-6,-35 ], sz:8  },
+  { delay:0.95, dur:5.7, x:[0, 16, 30, 10, 38], sz:6  },
+] as const;
 
 const SmokeTrail = () => (
   <>
-    {SMOKE.map((p, i) => (
+    {SMOKE_PARTICLES.map((p, i) => (
       <motion.div
         key={i}
-        initial={{ opacity: 0.72, y: 0, x: 0, scale: 0.3 }}
-        animate={{ opacity: 0, y: -110, x: p.dx, scale: 2.6 }}
-        transition={{ duration: p.dur, delay: p.delay, ease: [0.12, 0.38, 0.65, 1] }}
+        initial={{ opacity: 0, y: 0, x: 0, scale: 0.10 }}
+        animate={{
+          opacity: [0, 0.52, 0.38, 0.18, 0],
+          y:       [0, -75, -155, -230, -300],
+          x:       p.x as unknown as number[],
+          scale:   [0.10, 0.75, 1.9, 3.4, 5.2],
+        }}
+        transition={{
+          duration: p.dur,
+          delay:    p.delay,
+          ease:     "easeOut",
+          times:    [0, 0.18, 0.45, 0.72, 1.0],
+        }}
         style={{
-          position: "absolute", left: "50%", top: 0,
-          marginLeft: `-${p.size / 2}px`,
-          width: `${p.size}px`, height: `${p.size + 8}px`,
+          position: "absolute",
+          left:     "50%",
+          top:      0,
+          marginLeft: `${-(p.sz / 2)}px`,
+          marginTop:  `${-(p.sz / 2)}px`,
+          width:    `${p.sz}px`,
+          height:   `${p.sz}px`,
           borderRadius: "50%",
-          background: "rgba(200,200,200,0.55)",
-          filter: "blur(6px)",
+          background:   "rgba(188,188,196,0.50)",
+          filter:       "blur(9px)",
+          pointerEvents:"none",
         }}
       />
     ))}
@@ -165,7 +227,9 @@ const SmokeTrail = () => (
 const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const [phase, setPhase] = useState<Phase>("intro");
   const [flameIntensity, setFlameIntensity] = useState(1);
+  const [blowLevel, setBlowLevel] = useState(0);  // 0–1 wiggle amount
   const blowCountRef = useRef(0);
+  const blowChargeRef = useRef(0);               // sustained-blow accumulator
   const streamRef = useRef<MediaStream | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -197,24 +261,62 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
 
   const startDetection = useCallback(
     (analyser: AnalyserNode, stream: MediaStream, audioContext: AudioContext) => {
+      /*
+       * Three zones (tuned to work on both PC and mobile):
+       *   < LOW  → silence: drain charge, flame calm
+       *   LOW–HIGH → gentle breath: flame wiggles, no extinguish yet
+       *   > HIGH → real blow: charge accumulates; reaches NEEDED → blown out
+       *
+       * The charge requirement means a single loud spike (keyboard click,
+       * cough) won't accidentally extinguish the flame on PC.
+       */
+      const LOW  = 15;    // no reaction below this
+      const HIGH = 30;    // sustained-blow zone above this
+      const NEEDED = 80;  // charge required to extinguish (~0.5–1 s of blowing)
+
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
+
       const detect = () => {
         analyser.getByteFrequencyData(dataArray);
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-        if (avg < 7) readyForNextBlowRef.current = true;
-        if (avg > 5 && avg <= 12) setFlameIntensity(Math.max(0.3, 1 - (avg - 5) / 10));
-        if (avg > 12 && !blowCooldownRef.current && readyForNextBlowRef.current) {
-          blowCooldownRef.current = true;
-          readyForNextBlowRef.current = false;
-          blowCountRef.current += 1;
-          setFlameIntensity(0);
-          if (blowCountRef.current >= 1) {
+
+        if (avg < LOW) {
+          /* Silence — drain charge and reset */
+          blowChargeRef.current = Math.max(0, blowChargeRef.current - 4);
+          readyForNextBlowRef.current = true;
+          setBlowLevel(0);
+          setFlameIntensity(1);
+        } else if (avg < HIGH) {
+          /* Wiggle zone — flame reacts but charge slowly drains */
+          const level = (avg - LOW) / (HIGH - LOW);
+          blowChargeRef.current = Math.max(0, blowChargeRef.current - 1);
+          setBlowLevel(level);
+          setFlameIntensity(Math.max(0.65, 1 - level * 0.35));
+        } else {
+          /* Sustained blow — accumulate charge */
+          const extra = avg - HIGH;
+          blowChargeRef.current = Math.min(NEEDED + 1, blowChargeRef.current + extra * 0.6);
+          setBlowLevel(1);
+          setFlameIntensity(Math.max(0.25, 0.6 - (extra / 60)));
+
+          if (
+            blowChargeRef.current >= NEEDED &&
+            !blowCooldownRef.current &&
+            readyForNextBlowRef.current
+          ) {
+            blowCooldownRef.current  = true;
+            readyForNextBlowRef.current = false;
+            blowChargeRef.current    = 0;
+            blowCountRef.current    += 1;
+            setFlameIntensity(0);
+            setBlowLevel(0);
             setPhase("blown");
             stream.getTracks().forEach((t) => t.stop());
             audioContext.close();
             return;
           }
         }
+
         animFrameRef.current = requestAnimationFrame(detect);
       };
       detect();
@@ -416,7 +518,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   display: "flex", justifyContent: "center",
                   transition: "margin-top 0.2s",
                 }}>
-                  <RealisticFlame intensity={flameIntensity} />
+                  <RealisticFlame intensity={flameIntensity} blowLevel={blowLevel} />
                 </div>
 
                 {isBlown && (
