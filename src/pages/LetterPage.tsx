@@ -249,6 +249,34 @@ const LetterPage = () => {
             </span>
           </motion.div>
         )}
+
+        {showStars && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1.2, delay: 1.2 }}
+            className="mt-10 mb-6 flex justify-center"
+          >
+            <button
+              data-testid="button-one-more-thing"
+              onClick={() => navigate("/flowers")}
+              className="group relative px-6 py-3 rounded-full text-sm transition-all duration-300"
+              style={{
+                background: "hsl(340, 80%, 65%)",
+                color: "white",
+                fontFamily: "'Dancing Script', cursive",
+                fontSize: "1.1rem",
+                boxShadow: "0 4px 20px hsla(340, 80%, 65%, 0.4)",
+              }}
+            >
+              <span className="relative z-10">Oh, one more last thing — click here 🌸</span>
+              <span
+                className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{ background: "hsl(340, 80%, 58%)" }}
+              />
+            </button>
+          </motion.div>
+        )}
       </div>
     </div>
   );
