@@ -30,7 +30,7 @@ const PinkParticlesBackground = () => {
     window.addEventListener("resize", resize);
 
     const particles: Particle[] = [];
-    const maxParticles = 40;
+    const maxParticles = 20;
 
     const spawnParticle = (): Particle => {
       const type = Math.random() < 0.15 ? "heart" : Math.random() < 0.3 ? "sparkle" : "circle";
@@ -74,7 +74,7 @@ const PinkParticlesBackground = () => {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      if (particles.length < maxParticles && Math.random() < 0.1) {
+      if (particles.length < maxParticles && Math.random() < 0.06) {
         particles.push(spawnParticle());
       }
 

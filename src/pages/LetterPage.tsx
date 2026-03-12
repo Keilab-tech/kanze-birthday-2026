@@ -12,7 +12,7 @@ const letterLines = [
   "You've grown into someone so beautiful — not just on the outside,",
   "but in the way you care, the way you laugh, the way you love.",
   "",
-  "22 years of you in this world,",
+  "21 years of you in this world,",
   "and every single one of them matters.",
   "",
   "I hope this year brings you everything your heart has been whispering about.",

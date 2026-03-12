@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 
-const TARGET_DATE = new Date("2027-03-29T00:00:00");
+const TARGET_DATE = new Date("2026-03-29T00:00:00");
 
 const CountdownClock = () => {
   const [time, setTime] = useState({ yy: 0, mo: 0, dd: 0, hh: 0, mm: 0, ss: 0 });
@@ -149,7 +149,7 @@ const CountdownClock = () => {
         >
           {isPast ? (
             <span className="text-[9px] tracking-wider" style={{ color: "hsl(340, 80%, 75%)", fontFamily: "monospace" }}>
-              She's 22 🤍
+              She's 21 🤍
             </span>
           ) : (
             <span className="text-[8px] tracking-wider" style={{ color: "hsl(340, 80%, 75%)", fontFamily: "monospace" }}>

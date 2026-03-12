@@ -326,7 +326,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   fontFamily: "'Quicksand', sans-serif",
                 }}
               >
-                22 looks good on you.
+                21 looks good on you.
               </motion.p>
             </motion.div>
           )}
@@ -346,7 +346,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                 fontSize: "1.5rem",
               }}
             >
-              Before Chapter 22 begins...
+              Before Chapter 21 begins...
             </motion.p>
           )}
         </AnimatePresence>
