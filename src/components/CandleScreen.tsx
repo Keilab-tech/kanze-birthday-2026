@@ -20,24 +20,21 @@ interface CandleScreenProps {
   onComplete: () => void;
 }
 
-/* ── Cake canvas with background removed ────────────────────────── */
+/* ── Background-removed cake src ─────────────────────────────────── */
 /*
- * Draws cake-final.png onto a <canvas> and makes pixels whose colour
- * is close to the sampled corner background colour fully transparent.
- * Because the canvas element is in the DOM (not a data-URL img), its
- * transparent pixels naturally reveal whatever is behind it in CSS –
- * the solid-black parent div – no checkerboard, no glow.
+ * Processes cake-final.png entirely off-screen (no DOM dependency)
+ * and resolves to a data-URL with the brownish background erased.
+ * The img element whose src uses this URL will show the parent div's
+ * black background through the transparent pixels – clean, no glow.
  */
-function useCakeCanvas() {
-  const ref = useRef<HTMLCanvasElement>(null);
+function useProcessedCake(src: string): string {
+  const [url, setUrl] = useState(src); // fallback = original image
 
   useEffect(() => {
-    const canvas = ref.current;
-    if (!canvas) return;
-
     const img = new Image();
     img.onload = () => {
-      const SIZE = 640; // process at 640 px for speed
+      const SIZE = 640;
+      const canvas = document.createElement("canvas");
       canvas.width = SIZE;
       canvas.height = SIZE;
       const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
@@ -47,23 +44,24 @@ function useCakeCanvas() {
       const d = imageData.data;
 
       /* Sample background colour from four corners */
-      const px = (x: number, y: number) => ((y * SIZE + x) * 4);
-      const corners = [px(0, 0), px(SIZE - 1, 0), px(0, SIZE - 1), px(SIZE - 1, SIZE - 1)];
-      const bgR = Math.round(corners.reduce((s, i) => s + d[i],     0) / 4);
-      const bgG = Math.round(corners.reduce((s, i) => s + d[i + 1], 0) / 4);
-      const bgB = Math.round(corners.reduce((s, i) => s + d[i + 2], 0) / 4);
+      const idx = (x: number, y: number) => (y * SIZE + x) * 4;
+      const corners = [idx(0,0), idx(SIZE-1,0), idx(0,SIZE-1), idx(SIZE-1,SIZE-1)];
+      const bgR = Math.round(corners.reduce((s,i) => s + d[i],   0) / 4);
+      const bgG = Math.round(corners.reduce((s,i) => s + d[i+1], 0) / 4);
+      const bgB = Math.round(corners.reduce((s,i) => s + d[i+2], 0) / 4);
 
-      const THRESHOLD = 80; /* colour-distance cutoff */
+      const THRESHOLD = 68;
       for (let i = 0; i < d.length; i += 4) {
-        const dr = d[i] - bgR, dg = d[i + 1] - bgG, db = d[i + 2] - bgB;
-        if (Math.sqrt(dr * dr + dg * dg + db * db) < THRESHOLD) d[i + 3] = 0;
+        const dr = d[i]-bgR, dg = d[i+1]-bgG, db = d[i+2]-bgB;
+        if (Math.sqrt(dr*dr + dg*dg + db*db) < THRESHOLD) d[i+3] = 0;
       }
       ctx.putImageData(imageData, 0, 0);
+      setUrl(canvas.toDataURL("image/png"));
     };
-    img.src = "/images/cake-final.png";
-  }, []);
+    img.src = src;
+  }, [src]);
 
-  return ref;
+  return url;
 }
 
 /* ── Realistic CSS flame ─────────────────────────────────────────── */
@@ -176,8 +174,8 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const readyForNextBlowRef = useRef(true);
   const { start: startMusic } = useMusic();
 
-  /* Processed cake on a canvas element (no mask, no glow) */
-  const cakeCanvasRef = useCakeCanvas();
+  /* Processed cake src — offscreen canvas → data-URL → img */
+  const cakeSrc = useProcessedCake("/images/cake-final.png");
 
   useEffect(() => {
     if (phase !== "intro") return;
@@ -443,13 +441,15 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
               </div>
 
               {/*
-               * Cake rendered on a <canvas> whose transparent pixels show
-               * the pure-black parent background – no mask, no glow.
+               * Cake image — offscreen canvas erases the brownish background
+               * (stores result as a data-URL). Transparent pixels in the img
+               * reveal the black parent div naturally – no mask, no glow.
                */}
-              <canvas
-                ref={cakeCanvasRef}
+              <img
+                src={cakeSrc}
+                alt="Birthday cake"
                 className="w-full h-auto block"
-                style={{ background: "transparent" }}
+                draggable={false}
               />
             </div>
           </motion.div>
