@@ -1,296 +1,290 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
-/* ── helpers ─────────────────────────────────────────────────────── */
-const f = (n: number) => Math.round(n * 100) / 100;
+/* ── SVG path helpers ─────────────────────────────────────────────── */
+const ff = (n: number) => Math.round(n * 10) / 10;
+const deg = (d: number) => d * Math.PI / 180;
 
-function mkPetal(cx: number, cy: number, angleRad: number, L: number) {
-  const perp = angleRad + Math.PI / 2;
-  const w = L * 0.42;
-  const tx = cx + L * Math.cos(angleRad);
-  const ty = cy + L * Math.sin(angleRad);
-  const lc1x = cx + L * 0.28 * Math.cos(angleRad) + w * 0.55 * Math.cos(perp);
-  const lc1y = cy + L * 0.28 * Math.sin(angleRad) + w * 0.55 * Math.sin(perp);
-  const lc2x = cx + L * 0.78 * Math.cos(angleRad) + w * Math.cos(perp);
-  const lc2y = cy + L * 0.78 * Math.sin(angleRad) + w * Math.sin(perp);
-  const rc1x = cx + L * 0.78 * Math.cos(angleRad) - w * Math.cos(perp);
-  const rc1y = cy + L * 0.78 * Math.sin(angleRad) - w * Math.sin(perp);
-  const rc2x = cx + L * 0.28 * Math.cos(angleRad) - w * 0.55 * Math.cos(perp);
-  const rc2y = cy + L * 0.28 * Math.sin(angleRad) - w * 0.55 * Math.sin(perp);
-  return `M ${f(cx)} ${f(cy)} C ${f(lc1x)} ${f(lc1y)} ${f(lc2x)} ${f(lc2y)} ${f(tx)} ${f(ty)} C ${f(rc1x)} ${f(rc1y)} ${f(rc2x)} ${f(rc2y)} ${f(cx)} ${f(cy)}`;
+function filledLeaf(sx: number, sy: number, angleDeg: number, L: number, w: number) {
+  const a = deg(angleDeg);
+  const p = a + Math.PI / 2;
+  const tx = sx + L * Math.cos(a), ty = sy + L * Math.sin(a);
+  const lc1x = sx + L * 0.22 * Math.cos(a) + w * 0.65 * Math.cos(p);
+  const lc1y = sy + L * 0.22 * Math.sin(a) + w * 0.65 * Math.sin(p);
+  const lc2x = sx + L * 0.78 * Math.cos(a) + w * 0.95 * Math.cos(p);
+  const lc2y = sy + L * 0.78 * Math.sin(a) + w * 0.95 * Math.sin(p);
+  const rc1x = sx + L * 0.78 * Math.cos(a) - w * 0.95 * Math.cos(p);
+  const rc1y = sy + L * 0.78 * Math.sin(a) - w * 0.95 * Math.sin(p);
+  const rc2x = sx + L * 0.22 * Math.cos(a) - w * 0.65 * Math.cos(p);
+  const rc2y = sy + L * 0.22 * Math.sin(a) - w * 0.65 * Math.sin(p);
+  return `M${ff(sx)} ${ff(sy)} C${ff(lc1x)} ${ff(lc1y)} ${ff(lc2x)} ${ff(lc2y)} ${ff(tx)} ${ff(ty)} C${ff(rc1x)} ${ff(rc1y)} ${ff(rc2x)} ${ff(rc2y)} ${ff(sx)} ${ff(sy)}Z`;
 }
 
-function mkFlower(cx: number, cy: number, count: number, L: number) {
-  return Array.from({ length: count }, (_, i) => {
-    const angle = (i / count) * 2 * Math.PI - Math.PI / 2;
-    return mkPetal(cx, cy, angle, L);
-  });
+function filledStem(
+  x1: number, y1: number,
+  cpx1: number, cpy1: number,
+  cpx2: number, cpy2: number,
+  x2: number, y2: number,
+  w1: number, w2: number
+) {
+  const h1 = w1 / 2, h2 = w2 / 2;
+  return `M${ff(x1-h1)} ${ff(y1)} C${ff(cpx1-h1)} ${ff(cpy1)} ${ff(cpx2-h2)} ${ff(cpy2)} ${ff(x2-h2)} ${ff(y2)} L${ff(x2+h2)} ${ff(y2)} C${ff(cpx2+h2)} ${ff(cpy2)} ${ff(cpx1+h1)} ${ff(cpy1)} ${ff(x1+h1)} ${ff(y1)}Z`;
 }
 
-/* ── Stars ───────────────────────────────────────────────────────── */
-const STAR_COUNT = 160;
-
-interface Star {
-  id: number; x: number; y: number;
-  size: number; delay: number; dur: number; base: number;
+function filledPetal(cx: number, cy: number, angleDeg: number, L: number, w: number) {
+  const a = deg(angleDeg - 90);
+  const p = a + Math.PI / 2;
+  const tx = cx + L * Math.cos(a), ty = cy + L * Math.sin(a);
+  const lc1x = cx + L * 0.18 * Math.cos(a) + w * 0.5 * Math.cos(p);
+  const lc1y = cy + L * 0.18 * Math.sin(a) + w * 0.5 * Math.sin(p);
+  const lc2x = cx + L * 0.75 * Math.cos(a) + w * 0.95 * Math.cos(p);
+  const lc2y = cy + L * 0.75 * Math.sin(a) + w * 0.95 * Math.sin(p);
+  const rc1x = cx + L * 0.75 * Math.cos(a) - w * 0.95 * Math.cos(p);
+  const rc1y = cy + L * 0.75 * Math.sin(a) - w * 0.95 * Math.sin(p);
+  const rc2x = cx + L * 0.18 * Math.cos(a) - w * 0.5 * Math.cos(p);
+  const rc2y = cy + L * 0.18 * Math.sin(a) - w * 0.5 * Math.sin(p);
+  return `M${ff(cx)} ${ff(cy)} C${ff(lc1x)} ${ff(lc1y)} ${ff(lc2x)} ${ff(lc2y)} ${ff(tx)} ${ff(ty)} C${ff(rc1x)} ${ff(rc1y)} ${ff(rc2x)} ${ff(rc2y)} ${ff(cx)} ${ff(cy)}Z`;
 }
 
-/* ── Component ───────────────────────────────────────────────────── */
+/* ── FlowersPage ──────────────────────────────────────────────────── */
 const FlowersPage = () => {
   const navigate = useNavigate();
-  const [ready, setReady] = useState(false);
+  const starRef = useRef<HTMLCanvasElement>(null);
+  const [textPhase, setTextPhase] = useState<0 | 1 | 2>(0);
+  const [showFlowers, setShowFlowers] = useState(false);
 
+  /* Text sequence timing */
   useEffect(() => {
-    const t = setTimeout(() => setReady(true), 400);
-    return () => clearTimeout(t);
+    const t1 = setTimeout(() => setTextPhase(1), 350);
+    const t2 = setTimeout(() => setTextPhase(2), 3000);
+    const t3 = setTimeout(() => setShowFlowers(true), 4500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
   }, []);
 
-  const stars: Star[] = useMemo(
-    () =>
-      Array.from({ length: STAR_COUNT }, (_, i) => ({
-        id: i,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        size: Math.random() * 1.8 + 0.4,
-        delay: Math.random() * 5,
-        dur: 2.5 + Math.random() * 3,
-        base: 0.25 + Math.random() * 0.65,
-      })),
-    [],
-  );
+  /* Canvas starfield */
+  useEffect(() => {
+    const canvas = starRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d")!;
 
-  /* Pre-compute all flower petal paths */
-  const f1Petals = useMemo(() => mkFlower(118, 236, 5, 30), []);
-  const f2Petals = useMemo(() => mkFlower(200, 204, 6, 35), []);
-  const f3Petals = useMemo(() => mkFlower(284, 240, 5, 29), []);
+    const resize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const stars = Array.from({ length: 300 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 0.2 + Math.random() * 2.4,
+      freq: 0.3 + Math.random() * 2.0,
+      phase: Math.random() * Math.PI * 2,
+      base: 0.12 + Math.random() * 0.72,
+    }));
+
+    let t = 0, raf = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of stars) {
+        const op = s.base * (0.25 + 0.75 * (0.5 + 0.5 * Math.sin(t * s.freq + s.phase)));
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255,255,255,${op.toFixed(3)})`;
+        ctx.fill();
+      }
+      t += 0.018;
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", resize); };
+  }, []);
+
+  /* Pre-compute all SVG paths */
+  const art = useMemo(() => {
+    /* Grass blades — 9 blades fanning at base */
+    const grass = [
+      { sx: 145, sy: 478, a: -98, L: 58, w: 7 },
+      { sx: 155, sy: 480, a: -91, L: 72, w: 9 },
+      { sx: 166, sy: 479, a: -84, L: 52, w: 6 },
+      { sx: 178, sy: 479, a: -96, L: 76, w: 10 },
+      { sx: 192, sy: 480, a: -89, L: 65, w: 8 },
+      { sx: 205, sy: 480, a: -79, L: 60, w: 8 },
+      { sx: 218, sy: 479, a: -93, L: 70, w: 9 },
+      { sx: 230, sy: 479, a: -86, L: 55, w: 7 },
+      { sx: 242, sy: 478, a: -100, L: 62, w: 7 },
+    ].map(g => ({ d: filledLeaf(g.sx, g.sy, g.a, g.L, g.w), ox: g.sx, oy: g.sy }));
+
+    /* Stems — filled ribbons, base-w → tip-w */
+    const stems = [
+      { d: filledStem(157, 480, 150, 395, 132, 310, 112, 218, 12, 5.5), oy: 480 },
+      { d: filledStem(194, 480, 192, 385, 192, 280, 192, 162, 15, 7), oy: 480 },
+      { d: filledStem(232, 480, 240, 395, 258, 310, 278, 218, 12, 5.5), oy: 480 },
+    ];
+
+    /* Leaves */
+    const leaves = [
+      { d: filledLeaf(136, 358, -130, 56, 26), ox: 136, oy: 358 },
+      { d: filledLeaf(124, 285, -42, 50, 23), ox: 124, oy: 285 },
+      { d: filledLeaf(192, 360, -112, 62, 28), ox: 192, oy: 360 },
+      { d: filledLeaf(192, 278, -68, 56, 25), ox: 192, oy: 278 },
+      { d: filledLeaf(253, 352, -48, 55, 25), ox: 253, oy: 352 },
+      { d: filledLeaf(265, 282, -148, 50, 23), ox: 265, oy: 282 },
+      /* Extra smaller leaves for lushness */
+      { d: filledLeaf(130, 318, -155, 38, 18), ox: 130, oy: 318 },
+      { d: filledLeaf(192, 318, -95, 44, 20), ox: 192, oy: 318 },
+      { d: filledLeaf(258, 318, -22, 38, 18), ox: 258, oy: 318 },
+    ];
+
+    /* Flowers — 3 layers per flower for depth */
+    const makeFlower = (cx: number, cy: number, np: number, L: number, w: number) =>
+      [0, 1, 2].flatMap(layer => {
+        const rot = layer * (360 / np / 3);
+        const lL = L * (0.82 + layer * 0.1);
+        const lW = w * (0.88 + layer * 0.08);
+        const op = 0.42 + layer * 0.28;
+        return Array.from({ length: np }, (_, i) => ({
+          d: filledPetal(cx, cy, i * (360 / np) + rot, lL, lW),
+          op, cx, cy, layer,
+        }));
+      });
+
+    const flowers = [
+      { cx: 112, cy: 204, petals: makeFlower(112, 204, 5, 32, 15), cr: 9 },
+      { cx: 192, cy: 148, petals: makeFlower(192, 148, 7, 38, 18), cr: 11 },
+      { cx: 278, cy: 204, petals: makeFlower(278, 204, 5, 32, 15), cr: 9 },
+    ];
+
+    return { grass, stems, leaves, flowers };
+  }, []);
 
   /* Framer-motion helpers */
-  const stem = (delay: number) => ({
-    stroke: "white" as const,
-    strokeWidth: 2,
-    fill: "none" as const,
-    filter: "url(#glow)",
-    initial: { pathLength: 0, opacity: 0 },
-    animate: ready ? { pathLength: 1, opacity: 1 } : {},
-    transition: {
-      pathLength: { duration: 2.2, delay, ease: [0.2, 0.6, 0.4, 1.0] as [number, number, number, number] },
-      opacity:   { duration: 0.4, delay },
-    },
-  });
-
-  const leaf = (delay: number) => ({
-    stroke: "white" as const,
-    strokeWidth: 1.5,
-    fill: "none" as const,
-    filter: "url(#glow)",
-    initial: { pathLength: 0, opacity: 0 },
-    animate: ready ? { pathLength: 1, opacity: 1 } : {},
-    transition: {
-      pathLength: { duration: 1.1, delay, ease: "easeOut" as const },
-      opacity:   { duration: 0.3, delay },
-    },
-  });
-
-  const petal = (delay: number) => ({
-    stroke: "white" as const,
-    strokeWidth: 1.5,
-    fill: "none" as const,
-    filter: "url(#glow-strong)",
-    initial: { pathLength: 0, opacity: 0 },
-    animate: ready ? { pathLength: 1, opacity: 1 } : {},
-    transition: {
-      pathLength: { duration: 0.9, delay, ease: "easeOut" as const },
-      opacity:   { duration: 0.25, delay },
-    },
-  });
-
-  const circle = (delay: number) => ({
-    stroke: "white" as const,
-    strokeWidth: 1.5,
-    fill: "none" as const,
-    filter: "url(#glow-strong)",
-    initial: { pathLength: 0, opacity: 0 },
-    animate: ready ? { pathLength: 1, opacity: 1 } : {},
-    transition: {
-      pathLength: { duration: 0.55, delay, ease: "easeOut" as const },
-      opacity:   { duration: 0.25, delay },
-    },
+  const growFrom = (
+    ox: number, oy: number,
+    delay: number,
+    type: "scale" | "scaleY" = "scale",
+    duration = 0.85
+  ) => ({
+    initial: { opacity: 0, ...(type === "scaleY" ? { scaleY: 0 } : { scale: 0 }) },
+    animate: showFlowers ? { opacity: 1, ...(type === "scaleY" ? { scaleY: 1 } : { scale: 1 }) } : {},
+    transition: { duration, delay, ease: [0.16, 1, 0.3, 1] as [number,number,number,number] },
+    style: { transformOrigin: `${ox}px ${oy}px` },
   });
 
   return (
-    <div
-      className="min-h-screen flex flex-col items-center overflow-hidden"
-      style={{ background: "linear-gradient(to bottom, #04040a 0%, #07050e 60%, #06040c 100%)" }}
-    >
-      {/* Back button */}
+    <div className="fixed inset-0 overflow-hidden select-none" style={{ background: "#000" }}>
+
+      {/* Back */}
       <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.6, duration: 0.6 }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
         onClick={() => navigate("/letter")}
         data-testid="button-back-flowers"
-        className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-        style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(6px)" }}
-      >
-        ←
-      </motion.button>
+        className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center transition-colors"
+        style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.55)" }}
+      >←</motion.button>
 
-      {/* ── Starfield ──────────────────────────────────────────────── */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        {stars.map((s) => (
-          <motion.div
-            key={s.id}
-            className="absolute rounded-full bg-white"
-            style={{ left: `${s.x}%`, top: `${s.y}%`, width: s.size, height: s.size }}
-            animate={{ opacity: [s.base * 0.25, s.base, s.base * 0.15, s.base * 0.8, s.base * 0.25] }}
-            transition={{ duration: s.dur, delay: s.delay, repeat: Infinity, ease: "easeInOut" }}
-          />
-        ))}
+      {/* Starfield canvas */}
+      <canvas ref={starRef} className="fixed inset-0 pointer-events-none z-0" />
+
+      {/* Text */}
+      <div className="fixed inset-x-0 top-0 z-20 flex justify-center pt-14 pointer-events-none">
+        <AnimatePresence mode="wait">
+          {textPhase === 1 && (
+            <motion.p
+              key="t1"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.9 }}
+              style={{
+                color: "#fff",
+                fontFamily: "monospace",
+                fontSize: "clamp(0.85rem, 2.5vw, 1.05rem)",
+                letterSpacing: "0.18em",
+                textShadow: "0 0 8px rgba(255,255,255,0.8), 0 0 22px rgba(255,255,255,0.35)",
+              }}
+            >
+              I&nbsp; H a v e&nbsp; S o m e t h i n g
+            </motion.p>
+          )}
+          {textPhase >= 2 && (
+            <motion.p
+              key="t2"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+              transition={{ duration: 1.4 }}
+              style={{
+                color: "#fff",
+                fontFamily: "monospace",
+                fontWeight: 700,
+                fontSize: "clamp(1.2rem, 4.5vw, 1.75rem)",
+                letterSpacing: "0.55em",
+                textShadow:
+                  "0 0 10px rgba(255,255,255,1), 0 0 30px rgba(255,255,255,0.7), 0 0 70px rgba(255,255,255,0.35)",
+              }}
+            >
+              I L O V E U
+            </motion.p>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ── I L O V E U ────────────────────────────────────────────── */}
-      <motion.h1
-        initial={{ opacity: 0, y: -16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.6, delay: 0.5 }}
-        className="relative z-10 mt-16 text-2xl font-mono tracking-[0.55em] select-none"
-        style={{
-          color: "white",
-          textShadow:
-            "0 0 8px rgba(255,255,255,0.9), 0 0 24px rgba(255,255,255,0.5), 0 0 55px rgba(200,200,255,0.3)",
-        }}
+      {/* Flower SVG */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-10 flex justify-center pointer-events-none"
+        style={{ filter: "drop-shadow(0 0 14px rgba(255,255,255,0.55)) drop-shadow(0 0 40px rgba(255,255,255,0.2))" }}
       >
-        I L O V E U
-      </motion.h1>
-
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 1.4, delay: 1.2 }}
-        className="relative z-10 mt-3 text-xs tracking-widest"
-        style={{ color: "rgba(255,255,255,0.28)", fontFamily: "'Quicksand', sans-serif" }}
-      >
-        always &amp; forever
-      </motion.p>
-
-      {/* ── SVG Flower cluster ─────────────────────────────────────── */}
-      <div className="relative z-10 w-full max-w-xs mx-auto mt-4 flex-1 flex items-start justify-center px-4">
         <svg
-          viewBox="0 0 400 480"
+          viewBox="0 0 360 490"
           xmlns="http://www.w3.org/2000/svg"
-          className="w-full"
-          style={{ overflow: "visible" }}
+          style={{ width: "100%", maxWidth: 420, overflow: "visible" }}
         >
-          <defs>
-            <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-            <filter id="glow-strong" x="-80%" y="-80%" width="260%" height="260%">
-              <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
-          </defs>
-
-          {/* ══ STEMS ══════════════════════════════════════════════ */}
-
-          {/* Stem 1 — left flower */}
-          <motion.path
-            d="M 140 468 C 138 440 135 405 132 370 C 129 332 120 295 118 250"
-            {...stem(0)}
-          />
-          {/* Stem 2 — center (tallest) */}
-          <motion.path
-            d="M 200 468 C 200 438 200 402 200 365 C 200 316 200 268 200 218"
-            {...stem(0.25)}
-          />
-          {/* Stem 3 — right */}
-          <motion.path
-            d="M 262 468 C 264 440 268 404 270 368 C 272 330 278 295 284 254"
-            {...stem(0.12)}
-          />
-
-          {/* ══ LEAVES ═════════════════════════════════════════════ */}
-
-          {/* Stem 1 leaves */}
-          <motion.path
-            d="M 132 368 C 112 348 80 358 74 378 C 98 366 126 371 132 368"
-            {...leaf(1.6)}
-          />
-          <motion.path
-            d="M 130 328 C 152 306 182 318 184 338 C 162 329 135 332 130 328"
-            {...leaf(1.9)}
-          />
-
-          {/* Stem 2 leaves */}
-          <motion.path
-            d="M 200 372 C 176 352 146 364 144 384 C 168 372 196 376 200 372"
-            {...leaf(1.7)}
-          />
-          <motion.path
-            d="M 200 325 C 224 303 254 315 256 335 C 232 326 205 329 200 325"
-            {...leaf(2.0)}
-          />
-
-          {/* Stem 3 leaves */}
-          <motion.path
-            d="M 270 368 C 248 348 218 360 216 380 C 240 368 266 372 270 368"
-            {...leaf(1.65)}
-          />
-          <motion.path
-            d="M 272 330 C 294 308 322 322 324 342 C 300 332 276 334 272 330"
-            {...leaf(1.95)}
-          />
-
-          {/* ══ FLOWER 1 — left (5 petals) at (118, 236) ══════════ */}
-          {f1Petals.map((d, i) => (
-            <motion.path key={`f1p${i}`} d={d} {...petal(2.9 + i * 0.14)} />
+          {/* ── Grass ── */}
+          {art.grass.map((g, i) => (
+            <motion.path
+              key={`gr${i}`} d={g.d}
+              fill={`rgba(255,255,255,${0.42 + i * 0.025})`}
+              {...growFrom(g.ox, g.oy, i * 0.065, "scale", 0.72)}
+            />
           ))}
-          <motion.circle cx={118} cy={236} r={7} {...circle(3.65)} />
 
-          {/* ══ FLOWER 2 — center (6 petals) at (200, 204) ════════ */}
-          {f2Petals.map((d, i) => (
-            <motion.path key={`f2p${i}`} d={d} {...petal(3.1 + i * 0.16)} />
+          {/* ── Stems ── */}
+          {art.stems.map((s, i) => (
+            <motion.path
+              key={`st${i}`} d={s.d}
+              fill={`rgba(255,255,255,${0.82 + i * 0.05})`}
+              initial={{ opacity: 0, scaleY: 0 }}
+              animate={showFlowers ? { opacity: 1, scaleY: 1 } : {}}
+              transition={{ duration: 1.3, delay: 0.45 + i * 0.14, ease: [0.16, 1, 0.3, 1] }}
+              style={{ transformOrigin: `${180}px 480px` }}
+            />
           ))}
-          <motion.circle cx={200} cy={204} r={8.5} {...circle(4.08)} />
 
-          {/* ══ FLOWER 3 — right (5 petals) at (284, 240) ════════ */}
-          {f3Petals.map((d, i) => (
-            <motion.path key={`f3p${i}`} d={d} {...petal(3.0 + i * 0.14)} />
+          {/* ── Leaves ── */}
+          {art.leaves.map((l, i) => (
+            <motion.path
+              key={`lf${i}`} d={l.d}
+              fill={`rgba(255,255,255,${0.58 + i * 0.028})`}
+              {...growFrom(l.ox, l.oy, 1.45 + i * 0.11, "scale", 0.88)}
+            />
           ))}
-          <motion.circle cx={284} cy={240} r={7} {...circle(3.7)} />
 
-          {/* Tiny bud extras — add depth */}
-          {/* Small bud on stem 1 side-branch */}
-          <motion.path
-            d="M 124 295 C 104 280 92 268 96 258 C 105 262 118 275 124 295"
-            {...leaf(2.3)}
-          />
-          <motion.circle cx={96} cy={255} r={4.5} {...circle(3.55)} />
+          {/* ── Flower petals (back → front layers) ── */}
+          {art.flowers.map((fl, fi) =>
+            fl.petals.map((p, pi) => (
+              <motion.path
+                key={`fp${fi}-${pi}`} d={p.d}
+                fill={`rgba(255,255,255,${p.op})`}
+                {...growFrom(p.cx, p.cy, 2.1 + fi * 0.2 + p.layer * 0.12 + (pi % 7) * 0.055, "scale", 0.78)}
+              />
+            ))
+          )}
 
-          {/* Small bud on stem 3 side-branch */}
-          <motion.path
-            d="M 276 292 C 296 276 310 264 306 254 C 297 258 282 272 276 292"
-            {...leaf(2.3)}
-          />
-          <motion.circle cx={306} cy={251} r={4.5} {...circle(3.6)} />
+          {/* ── Flower centers ── */}
+          {art.flowers.map((fl, fi) => (
+            <motion.circle
+              key={`fc${fi}`} cx={fl.cx} cy={fl.cy} r={fl.cr}
+              fill="rgba(255,255,255,1)"
+              {...growFrom(fl.cx, fl.cy, 3.15 + fi * 0.18, "scale", 0.55)}
+            />
+          ))}
         </svg>
       </div>
-
-      {/* Subtle footer glow */}
-      <div
-        className="fixed bottom-0 left-0 right-0 h-24 pointer-events-none"
-        style={{
-          background: "linear-gradient(to top, rgba(120,60,180,0.06), transparent)",
-        }}
-      />
     </div>
   );
 };
