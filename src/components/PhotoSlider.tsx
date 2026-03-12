@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 
 const CARD_W = 220;
 const CARD_H = 300;
 const AUTO_INTERVAL = 3500;
+const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp"];
 
 const PhotoSlider = () => {
   const [images, setImages] = useState<string[]>([]);
@@ -13,33 +13,28 @@ const PhotoSlider = () => {
   const touchDelta = useRef(0);
 
   useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase.storage
-        .from("kanze-birthday")
-        .list("gallery", { limit: 100, sortBy: { column: "name", order: "asc" } });
-      if (!data) return;
-      const urls = data
-        .filter(f => {
-          const ext = f.name.split(".").pop()?.toLowerCase() || "";
-          return !f.name.startsWith(".") && ["jpg", "jpeg", "png", "webp"].includes(ext);
-        })
-        .map(f => {
-          const { data: u } = supabase.storage.from("kanze-birthday").getPublicUrl(`gallery/${f.name}`);
-          return u.publicUrl;
-        });
-      setImages(urls);
-    };
-    load();
+    fetch("/api/media/gallery")
+      .then((r) => r.json())
+      .then((data: { url: string; name: string; isVideo: boolean }[]) => {
+        const urls = data
+          .filter((f) => {
+            const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
+            return IMAGE_EXTS.includes(ext) && !f.isVideo;
+          })
+          .map((f) => f.url);
+        setImages(urls);
+      })
+      .catch(() => {});
   }, []);
 
   const next = useCallback(() => {
     if (images.length === 0) return;
-    setCurrent(prev => (prev + 1) % images.length);
+    setCurrent((prev) => (prev + 1) % images.length);
   }, [images.length]);
 
   const prev = useCallback(() => {
     if (images.length === 0) return;
-    setCurrent(prev => (prev - 1 + images.length) % images.length);
+    setCurrent((prev) => (prev - 1 + images.length) % images.length);
   }, [images.length]);
 
   useEffect(() => {
@@ -65,8 +60,7 @@ const PhotoSlider = () => {
 
   if (images.length === 0) return null;
 
-  const getIndex = (offset: number) =>
-    (current + offset + images.length) % images.length;
+  const getIndex = (offset: number) => (current + offset + images.length) % images.length;
 
   const slots = [
     { offset: -2, xPercent: -130, scale: 0.45, z: 0, opacity: 0.2, blur: 4 },
@@ -93,15 +87,8 @@ const PhotoSlider = () => {
               key={`slot-${slot.offset}`}
               className="absolute"
               style={{ zIndex: slot.z }}
-              animate={{
-                x: baseX,
-                scale: slot.scale,
-                opacity: slot.opacity,
-              }}
-              transition={{
-                duration: 0.9,
-                ease: [0.25, 0.1, 0.25, 1],
-              }}
+              animate={{ x: baseX, scale: slot.scale, opacity: slot.opacity }}
+              transition={{ duration: 0.9, ease: [0.25, 0.1, 0.25, 1] }}
             >
               <div
                 className="rounded-2xl overflow-hidden"
@@ -119,12 +106,7 @@ const PhotoSlider = () => {
                   filter: slot.blur > 0 ? `blur(${slot.blur}px)` : "none",
                 }}
               >
-                <img
-                  src={images[idx]}
-                  alt=""
-                  className="w-full h-full object-cover"
-                  draggable={false}
-                />
+                <img src={images[idx]} alt="" className="w-full h-full object-cover" draggable={false} />
               </div>
             </motion.div>
           );

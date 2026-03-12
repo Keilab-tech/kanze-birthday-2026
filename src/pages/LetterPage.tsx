@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
 import { useMusic } from "@/contexts/MusicContext";
 
@@ -27,15 +26,12 @@ const letterLines = [
   "I'm grateful it gave me you.",
 ];
 
-// Group lines into paragraphs (split by empty lines)
 const getParagraphs = () => {
   const paragraphs: { startLine: number; endLine: number }[] = [];
   let start = 0;
   for (let i = 0; i <= letterLines.length; i++) {
     if (i === letterLines.length || letterLines[i] === "") {
-      if (i > start) {
-        paragraphs.push({ startLine: start, endLine: i - 1 });
-      }
+      if (i > start) paragraphs.push({ startLine: start, endLine: i - 1 });
       start = i + 1;
     }
   }
@@ -45,6 +41,7 @@ const getParagraphs = () => {
 const paragraphs = getParagraphs();
 
 interface VoiceNote {
+  id: number;
   name: string;
   url: string;
 }
@@ -64,64 +61,31 @@ const LetterPage = () => {
     return () => { fadeUp(); };
   }, [fadeDown, fadeUp]);
 
+  useEffect(() => {
+    fetch("/api/media/voice-notes")
+      .then((r) => r.json())
+      .then((data: VoiceNote[]) => setVoiceNotes(data))
+      .catch(() => {});
+  }, []);
+
   const fullText = letterLines.join("\n");
   const totalChars = fullText.length;
 
-  // Calculate which paragraph index each char position belongs to
   const getCompletedParagraphs = () => {
     const completed: number[] = [];
-    let charCount = 0;
-    for (let i = 0; i < letterLines.length; i++) {
-      charCount += letterLines[i].length + 1; // +1 for newline
-    }
-    // Check each paragraph
-    let pos = 0;
-    for (let li = 0; li < letterLines.length; li++) {
-      pos += letterLines[li].length + 1;
-    }
-    // Simpler: check if visibleChars has passed the end of each paragraph
-    let cumulativeEnd = 0;
     paragraphs.forEach((p, idx) => {
-      for (let li = 0; li <= p.endLine; li++) {
-        // Calculate end position
-      }
       let endPos = 0;
       for (let li = 0; li <= p.endLine; li++) {
         endPos += letterLines[li].length + 1;
       }
-      if (visibleChars >= endPos) {
-        completed.push(idx);
-      }
+      if (visibleChars >= endPos) completed.push(idx);
     });
     return completed;
   };
 
-  useEffect(() => {
-    const loadVoiceNotes = async () => {
-      const { data } = await supabase.storage
-        .from("kanze-birthday")
-        .list("voice-notes", { limit: 50 });
-
-      if (data) {
-        const notes: VoiceNote[] = data
-          .filter(f => f.name !== ".emptyFolderPlaceholder")
-          .map(f => {
-            const { data: urlData } = supabase.storage
-              .from("kanze-birthday")
-              .getPublicUrl(`voice-notes/${f.name}`);
-            return { name: f.name, url: urlData.publicUrl };
-          });
-        setVoiceNotes(notes);
-      }
-    };
-    loadVoiceNotes();
-  }, []);
-
   const playKeyClick = useCallback(() => {
     try {
-      if (!typeAudioCtxRef.current) {
-        typeAudioCtxRef.current = new AudioContext();
-      }
+      if (!typeAudioCtxRef.current) typeAudioCtxRef.current = new AudioContext();
       const ctx = typeAudioCtxRef.current;
       const bufferSize = ctx.sampleRate * 0.025;
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
@@ -152,18 +116,16 @@ const LetterPage = () => {
     }
     const currentChar = fullText[visibleChars];
     const isNewline = currentChar === "\n";
-    const delay = isNewline ? 200 : (45 + Math.random() * 30);
+    const delay = isNewline ? 200 : 45 + Math.random() * 30;
     const t = setTimeout(() => {
       if (!isNewline && currentChar !== " ") playKeyClick();
-      setVisibleChars(v => v + 1);
+      setVisibleChars((v) => v + 1);
     }, delay);
     return () => clearTimeout(t);
   }, [visibleChars, totalChars, fullText, playKeyClick]);
 
   const playVoiceNote = (note: VoiceNote) => {
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
+    if (audioRef.current) audioRef.current.pause();
     if (playingNote === note.name) {
       setPlayingNote(null);
       return;
@@ -175,7 +137,7 @@ const LetterPage = () => {
     setPlayingNote(note.name);
   };
 
-  const voiceNoteLines = [2, 5, 10, 14].filter(i => i < voiceNotes.length + 2);
+  const voiceNoteLines = [2, 5, 10, 14].filter((i) => i < voiceNotes.length + 2);
 
   return (
     <div className="min-h-screen bg-princess-gradient relative overflow-hidden">
@@ -191,10 +153,7 @@ const LetterPage = () => {
             navigate("/hub");
           }}
           className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center shadow-sm"
-          style={{
-            background: "hsl(340, 60%, 92%)",
-            color: "hsl(340, 40%, 35%)",
-          }}
+          style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 35%)" }}
         >
           ←
         </motion.button>
@@ -209,12 +168,8 @@ const LetterPage = () => {
               const hasVoiceNote = voiceNoteIndex !== -1 && voiceNoteIndex < voiceNotes.length;
               const lineComplete = i < visibleLineTexts.length - 1;
 
-              if (letterLines[i] === "" && lineComplete) {
-                return <div key={i} className="h-5" />;
-              }
-              if (lineText === "" && !lineComplete) {
-                return null;
-              }
+              if (letterLines[i] === "" && lineComplete) return <div key={i} className="h-5" />;
+              if (lineText === "" && !lineComplete) return null;
 
               return (
                 <motion.div
@@ -226,18 +181,13 @@ const LetterPage = () => {
                 >
                   <p
                     className={isTitle ? "text-2xl text-primary mb-4" : "text-base leading-[1.9] text-foreground/90"}
-                    style={{
-                      fontFamily: isTitle ? "'Dancing Script', cursive" : "'Quicksand', sans-serif",
-                    }}
+                    style={{ fontFamily: isTitle ? "'Dancing Script', cursive" : "'Quicksand', sans-serif" }}
                   >
                     {lineText}
                     {!lineComplete && (
                       <span
                         className="inline-block w-0.5 h-5 ml-0.5 align-middle"
-                        style={{
-                          backgroundColor: "hsl(340, 80%, 65%)",
-                          animation: "blink 0.8s step-end infinite",
-                        }}
+                        style={{ backgroundColor: "hsl(340, 80%, 65%)", animation: "blink 0.8s step-end infinite" }}
                       />
                     )}
                   </p>
@@ -246,9 +196,10 @@ const LetterPage = () => {
                       onClick={() => playVoiceNote(voiceNotes[voiceNoteIndex])}
                       className="flex-shrink-0 mt-1 w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-125"
                       style={{
-                        background: playingNote === voiceNotes[voiceNoteIndex].name
-                          ? "hsl(340, 80%, 65%)"
-                          : "hsl(340, 60%, 80%)",
+                        background:
+                          playingNote === voiceNotes[voiceNoteIndex].name
+                            ? "hsl(340, 80%, 65%)"
+                            : "hsl(340, 60%, 80%)",
                       }}
                     >
                       <span className="text-white text-[8px]">
@@ -262,7 +213,6 @@ const LetterPage = () => {
           })()}
         </div>
 
-        {/* Sparkle stars at the end */}
         {showStars && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -284,7 +234,6 @@ const LetterPage = () => {
           </motion.div>
         )}
 
-        {/* Background name watermark */}
         {showStars && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -294,10 +243,7 @@ const LetterPage = () => {
           >
             <span
               className="text-[120px] md:text-[180px]"
-              style={{
-                fontFamily: "'Dancing Script', cursive",
-                color: "hsl(340, 80%, 75%)",
-              }}
+              style={{ fontFamily: "'Dancing Script', cursive", color: "hsl(340, 80%, 75%)" }}
             >
               Kanze
             </span>

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
 import loveEmojiChat from "@/assets/love-emoji-chat.jpeg";
 
 interface MomentFile {
+  id: number;
   name: string;
   url: string;
 }
@@ -25,32 +25,14 @@ const MomentsPage = () => {
   const navigate = useNavigate();
   const [files, setFiles] = useState<MomentFile[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<MomentFile | null>(null);
+  const [selected, setSelected] = useState<{ name: string; url: string } | null>(null);
 
   useEffect(() => {
-    const loadFiles = async () => {
-      const { data, error } = await supabase.storage
-        .from("kanze-birthday")
-        .list("moments", { limit: 100, sortBy: { column: "name", order: "asc" } });
-
-      if (error || !data) {
-        setLoading(false);
-        return;
-      }
-
-      const momentFiles: MomentFile[] = data
-        .filter(f => f.name !== ".emptyFolderPlaceholder")
-        .map(f => {
-          const { data: urlData } = supabase.storage
-            .from("kanze-birthday")
-            .getPublicUrl(`moments/${f.name}`);
-          return { name: f.name, url: urlData.publicUrl };
-        });
-
-      setFiles(momentFiles);
-      setLoading(false);
-    };
-    loadFiles();
+    fetch("/api/media/moments")
+      .then((r) => r.json())
+      .then((data: MomentFile[]) => setFiles(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -64,10 +46,7 @@ const MomentsPage = () => {
           transition={{ duration: 0.5 }}
           onClick={() => navigate("/hub")}
           className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center shadow-sm"
-          style={{
-            background: "hsl(340, 60%, 92%)",
-            color: "hsl(340, 40%, 35%)",
-          }}
+          style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 35%)" }}
         >
           ←
         </motion.button>
@@ -89,7 +68,7 @@ const MomentsPage = () => {
           <div className="columns-2 gap-3 space-y-3">
             {files.map((file, i) => (
               <motion.div
-                key={file.name}
+                key={file.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.06 }}
@@ -101,9 +80,7 @@ const MomentsPage = () => {
                 <img src={file.url} alt={file.name} className="w-full rounded-[1.2rem]" loading="lazy" />
                 <div
                   className="absolute bottom-0 left-0 right-0 p-3 rounded-b-[1.2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{
-                    background: "linear-gradient(transparent, hsl(340, 50%, 65%, 0.6))",
-                  }}
+                  style={{ background: "linear-gradient(transparent, hsl(340, 50%, 65%, 0.6))" }}
                 >
                   <p className="text-white text-xs text-center" style={{ fontFamily: "'Dancing Script', cursive" }}>
                     {captions[i % captions.length]}
@@ -112,7 +89,6 @@ const MomentsPage = () => {
               </motion.div>
             ))}
 
-            {/* Love emoji chat screenshot */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -125,9 +101,7 @@ const MomentsPage = () => {
               <img src={loveEmojiChat} alt="First love emoji chat" className="w-full rounded-[1.2rem]" loading="lazy" />
               <div
                 className="absolute bottom-0 left-0 right-0 p-3 rounded-b-[1.2rem]"
-                style={{
-                  background: "linear-gradient(transparent, hsl(340, 50%, 65%, 0.6))",
-                }}
+                style={{ background: "linear-gradient(transparent, hsl(340, 50%, 65%, 0.6))" }}
               >
                 <p className="text-white text-xs text-center" style={{ fontFamily: "'Dancing Script', cursive" }}>
                   First time you sent me a love emoji 😂
@@ -138,7 +112,6 @@ const MomentsPage = () => {
         )}
       </div>
 
-      {/* Lightbox */}
       {selected && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -149,10 +122,7 @@ const MomentsPage = () => {
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(null); }}
             className="absolute top-5 left-5 z-[60] rounded-full w-11 h-11 flex items-center justify-center shadow-sm text-lg font-medium"
-            style={{
-              background: "hsl(340, 60%, 92%)",
-              color: "hsl(340, 40%, 30%)",
-            }}
+            style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 30%)" }}
           >
             ←
           </button>
@@ -163,7 +133,7 @@ const MomentsPage = () => {
             alt={selected.name}
             className="max-w-full max-h-[85vh] rounded-2xl"
             style={{ boxShadow: "0 4px 20px hsl(0 0% 0% / 0.3)" }}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           />
         </motion.div>
       )}

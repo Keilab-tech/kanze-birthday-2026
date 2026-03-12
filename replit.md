@@ -4,38 +4,53 @@ A birthday gift web app for Kanze — a beautiful, animated React frontend with 
 
 ## Architecture
 
-This is a **frontend-only** React + Vite + TypeScript app. There is no backend server.
+Full-stack app: Express backend + React/Vite frontend, all served on port 5000.
 
-- **Framework**: React 18 with Vite
-- **Styling**: Tailwind CSS + shadcn/ui components
+- **Frontend**: React 18 + Vite + TypeScript
+- **Backend**: Express.js (TypeScript, run via tsx)
+- **Database**: Replit PostgreSQL via Drizzle ORM
+- **File Storage**: Local filesystem (`uploads/` directory, served as static files)
+- **Styling**: Tailwind CSS + shadcn/ui
 - **Routing**: React Router v6
 - **Animations**: Framer Motion
-- **Storage**: Supabase Storage (public bucket `kanze-birthday`) for gallery images, moments photos, and voice notes
 
 ## Key Pages
 
 - `/` — Candle intro animation with optional PWA install prompt
-- `/hub` — Memory hub with navigation to all sections
-- `/gallery` — Photo/video gallery loaded from Supabase Storage `gallery/` folder
-- `/moments` — Moments page loaded from Supabase Storage `moments/` folder
-- `/letter` — Animated typewriter love letter with voice notes from `voice-notes/` folder
+- `/hub` — Memory hub with photo slider and navigation
+- `/gallery` — Photo/video gallery
+- `/moments` — Moments page  
+- `/letter` — Animated typewriter love letter with voice notes
 
-## Environment Variables
+## API Endpoints
 
-- `VITE_SUPABASE_URL` — Supabase project URL
-- `VITE_SUPABASE_PUBLISHABLE_KEY` — Supabase anon/public key
+- `GET /api/media/:folder` — List all media in a folder (gallery, moments, voice-notes)
+- `POST /api/media/:folder` — Upload a new media file to a folder
+- `DELETE /api/media/:id` — Delete a media file by ID
 
-These are set in Replit's shared environment. They are public-facing anon keys (safe to expose in frontend).
+## File Structure
 
-## Audio
+```
+server/
+  index.ts      — Express entry point (port 5000, embeds Vite in dev)
+  routes.ts     — API route handlers + multer file upload
+  storage.ts    — Drizzle database storage interface
+  db.ts         — PostgreSQL connection via Drizzle
+  vite.ts       — Vite dev middleware integration
+shared/
+  schema.ts     — Drizzle schema (media_files table)
+src/            — React frontend
+uploads/        — Uploaded media files (served as static)
+```
 
-Background music tracks are served from `/audio/` in the public folder:
-- `background-song.mp3`
-- `birkin-bag.mp3`
+## How to Add Media
+
+Upload files via `POST /api/media/gallery`, `POST /api/media/moments`, or `POST /api/media/voice-notes`.
+Accepted formats: jpg, jpeg, png, webp (images), mp4, webm, mov (videos), and audio files.
 
 ## Development
 
 ```bash
-npm run dev    # Start dev server on port 5000
-npm run build  # Build for production
+npx tsx server/index.ts   # Start dev server (workflow command)
+npx drizzle-kit push      # Push schema changes to database
 ```

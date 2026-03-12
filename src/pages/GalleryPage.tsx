@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { supabase } from "@/integrations/supabase/client";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
 
 interface MediaFile {
+  id: number;
   name: string;
   url: string;
   isVideo: boolean;
@@ -17,34 +17,11 @@ const GalleryPage = () => {
   const [selected, setSelected] = useState<MediaFile | null>(null);
 
   useEffect(() => {
-    const loadFiles = async () => {
-      const { data, error } = await supabase.storage
-        .from("kanze-birthday")
-        .list("gallery", { limit: 100, sortBy: { column: "name", order: "asc" } });
-
-      if (error || !data) {
-        setLoading(false);
-        return;
-      }
-
-      const mediaFiles: MediaFile[] = data
-        .filter(f => f.name !== ".emptyFolderPlaceholder")
-        .map(f => {
-          const { data: urlData } = supabase.storage
-            .from("kanze-birthday")
-            .getPublicUrl(`gallery/${f.name}`);
-          const ext = f.name.split(".").pop()?.toLowerCase() || "";
-          return {
-            name: f.name,
-            url: urlData.publicUrl,
-            isVideo: ["mp4", "webm", "mov"].includes(ext),
-          };
-        });
-
-      setFiles(mediaFiles);
-      setLoading(false);
-    };
-    loadFiles();
+    fetch("/api/media/gallery")
+      .then((r) => r.json())
+      .then((data: MediaFile[]) => setFiles(data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -52,17 +29,13 @@ const GalleryPage = () => {
       <PinkParticlesBackground />
 
       <div className="relative z-10 p-4 pb-20">
-        {/* Back button */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
           onClick={() => navigate("/hub")}
           className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center shadow-sm"
-          style={{
-            background: "hsl(340, 60%, 92%)",
-            color: "hsl(340, 40%, 35%)",
-          }}
+          style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 35%)" }}
         >
           ←
         </motion.button>
@@ -86,14 +59,13 @@ const GalleryPage = () => {
             animate={{ opacity: 1 }}
             className="text-center text-muted-foreground mt-20"
           >
-            No photos yet. Upload images to the{" "}
-            <span className="font-medium text-primary">gallery</span> folder in storage.
+            No photos yet.
           </motion.p>
         ) : (
           <div className="columns-2 gap-3 space-y-3">
             {files.map((file, i) => (
               <motion.div
-                key={file.name}
+                key={file.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: i * 0.06 }}
@@ -117,7 +89,6 @@ const GalleryPage = () => {
         )}
       </div>
 
-      {/* Lightbox */}
       {selected && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -129,15 +100,18 @@ const GalleryPage = () => {
           <button
             onClick={(e) => { e.stopPropagation(); setSelected(null); }}
             className="absolute top-5 left-5 z-[60] rounded-full w-11 h-11 flex items-center justify-center shadow-sm text-lg font-medium"
-            style={{
-              background: "hsl(340, 60%, 92%)",
-              color: "hsl(340, 40%, 30%)",
-            }}
+            style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 30%)" }}
           >
             ←
           </button>
           {selected.isVideo ? (
-            <video src={selected.url} controls autoPlay className="max-w-full max-h-[85vh] rounded-2xl" onClick={e => e.stopPropagation()} />
+            <video
+              src={selected.url}
+              controls
+              autoPlay
+              className="max-w-full max-h-[85vh] rounded-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
           ) : (
             <motion.img
               initial={{ scale: 0.8 }}
@@ -146,7 +120,7 @@ const GalleryPage = () => {
               alt={selected.name}
               className="max-w-full max-h-[85vh] rounded-2xl"
               style={{ boxShadow: "0 4px 20px hsl(0 0% 0% / 0.3)" }}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             />
           )}
         </motion.div>
