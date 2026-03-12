@@ -296,8 +296,8 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     >
       {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
 
-      {/* ── All text – single vertically-centered position ─────────── */}
-      <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+      {/* ── All text – fixed top, clear of the cake ────────────────── */}
+      <div className="fixed top-0 inset-x-0 z-20 flex flex-col items-center pt-16 pointer-events-none">
         <AnimatePresence>
           {phase === "waiting" && (
             <motion.p
