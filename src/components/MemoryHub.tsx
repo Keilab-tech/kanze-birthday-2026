@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Home } from "lucide-react";
 import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
@@ -18,6 +18,27 @@ const MemoryHub = () => {
   return (
     <div className="min-h-screen bg-princess-gradient relative overflow-x-hidden overflow-y-auto">
       <PinkParticlesBackground />
+
+      {/* Home button — returns to candle/cake screen */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.5, duration: 0.4 }}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.92 }}
+        onClick={() => navigate("/")}
+        data-testid="button-home"
+        title="Back to cake"
+        className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center transition-shadow"
+        style={{
+          background: "hsl(340, 55%, 90%)",
+          boxShadow: "0 2px 12px hsl(340 50% 70% / 0.35)",
+          border: "1.5px solid hsl(340, 50%, 80%)",
+          color: "hsl(340, 60%, 55%)",
+        }}
+      >
+        <Home size={18} />
+      </motion.button>
 
       <div className="relative z-10 flex flex-col items-center px-6 pb-16">
         {/* Photo Slider — fills top half */}
