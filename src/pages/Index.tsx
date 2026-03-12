@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import CandleScreen from "../components/CandleScreen";
 
 const Index = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<(Event & { prompt: () => void }) | null>(null);
   const [showInstall, setShowInstall] = useState(false);
   const [introStarted, setIntroStarted] = useState(false);
   const navigate = useNavigate();

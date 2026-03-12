@@ -57,7 +57,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     } catch {
       setPhase("listening");
     }
-  }, [phase]);
+  }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const blowCooldownRef = useRef(false);
   const readyForNextBlowRef = useRef(true);

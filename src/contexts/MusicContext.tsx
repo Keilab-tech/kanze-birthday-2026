@@ -66,7 +66,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
       analyserRef.current = analyser;
       sourceRef.current = source;
       setAnalyserNode(analyser);
-    } catch {}
+    } catch (_e) { /* AudioContext setup failed silently */ }
   }, []);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
       audio.pause();
       audio.src = "";
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTrack = useCallback((index: number) => {
     if (!audioRef.current) return;

@@ -106,7 +106,7 @@ const LetterPage = () => {
       filter.connect(gain);
       gain.connect(ctx.destination);
       source.start();
-    } catch {}
+    } catch (_e) { /* AudioContext not available */ }
   }, []);
 
   useEffect(() => {

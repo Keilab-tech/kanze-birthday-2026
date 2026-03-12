@@ -20,6 +20,7 @@ const RefreshGuard = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
   const hasNavigated = useRef(false);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!hasNavigated.current && location.pathname !== "/") {
       hasNavigated.current = true;
