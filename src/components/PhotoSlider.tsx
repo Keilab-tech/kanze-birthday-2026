@@ -6,10 +6,19 @@ const CARD_H = 300;
 const AUTO_INTERVAL = 3500;
 const IMAGE_EXTS = ["jpg", "jpeg", "png", "webp", "gif"];
 
+/* ── Hard-coded gallery photos (already uploaded) ─────────────────── */
+const GALLERY_PHOTOS = [
+  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM.jpeg",
+  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM%20(1).jpeg",
+  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM%20(2).jpeg",
+  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.36%20AM%20(3).jpeg",
+  "/uploads/gallery/WhatsApp%20Image%202026-03-03%20at%2011.08.37%20AM.jpeg",
+];
+
 const PhotoSlider = () => {
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<string[]>(GALLERY_PHOTOS);
   const [current, setCurrent] = useState(0);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded, setLoaded] = useState(true);
   const touchStartX = useRef(0);
   const touchDelta = useRef(0);
   const autoRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -18,16 +27,22 @@ const PhotoSlider = () => {
     fetch("/api/media/gallery")
       .then((r) => r.json())
       .then((data: { url: string; name: string; isVideo: boolean }[]) => {
-        const urls = data
+        const apiUrls = data
           .filter((f) => {
             const ext = f.name.split(".").pop()?.toLowerCase() ?? "";
             return IMAGE_EXTS.includes(ext) && !f.isVideo;
           })
           .map((f) => f.url);
-        setImages(urls);
-        setLoaded(true);
+        /* Merge: hardcoded first, then any newly uploaded ones not already listed */
+        const combined = [...GALLERY_PHOTOS];
+        apiUrls.forEach((url) => {
+          const decoded = decodeURIComponent(url);
+          const alreadyIn = combined.some((c) => decodeURIComponent(c) === decoded);
+          if (!alreadyIn) combined.push(url);
+        });
+        setImages(combined);
       })
-      .catch(() => setLoaded(true));
+      .catch(() => { /* keep hardcoded fallback */ });
   }, []);
 
   const next = useCallback(() => {

@@ -13,6 +13,7 @@ import GalleryPage from "./pages/GalleryPage";
 import MomentsPage from "./pages/MomentsPage";
 import LetterPage from "./pages/LetterPage";
 import FlowersPage from "./pages/FlowersPage";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,7 @@ const App = () => (
           <RefreshGuard>
             <AnimatedRoutes />
           </RefreshGuard>
+          <PWAInstallPrompt />
         </BrowserRouter>
       </MusicProvider>
     </TooltipProvider>
