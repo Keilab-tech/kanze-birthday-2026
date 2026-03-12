@@ -296,39 +296,36 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     >
       {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
 
-      {/* ── Prompt text – fixed top-center ───────────────────────── */}
-      <AnimatePresence>
-        {phase === "waiting" && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="fixed top-0 inset-x-0 z-20 flex justify-center pt-14 pointer-events-none"
-          >
-            <p className="text-sm tracking-wider"
-              style={{ color: "hsl(340,50%,70%)", fontFamily: "'Quicksand',sans-serif" }}>
-              Tap anywhere to begin ✨
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {phase === "listening" && (
-          <motion.div
-            initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.8 }}
-            className="fixed top-0 inset-x-0 z-20 flex justify-center pt-14 pointer-events-none"
-          >
-            <p className="text-sm tracking-wider"
-              style={{ color: "hsl(340,50%,70%)", fontFamily: "'Quicksand',sans-serif" }}>
-              Blow gently... 🌬️
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Story text – vertically centered ─────────────────────── */}
+      {/* ── All text – single vertically-centered position ─────────── */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+        <AnimatePresence>
+          {phase === "waiting" && (
+            <motion.p
+              key="waiting"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-sm tracking-wider text-center px-8"
+              style={{ color: "hsl(340,50%,70%)", fontFamily: "'Quicksand',sans-serif" }}
+            >
+              Tap anywhere to begin ✨
+            </motion.p>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {phase === "listening" && (
+            <motion.p
+              key="listening"
+              initial={{ opacity: 0 }} animate={{ opacity: 0.8 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.8 }}
+              className="text-sm tracking-wider text-center px-8"
+              style={{ color: "hsl(340,50%,70%)", fontFamily: "'Quicksand',sans-serif" }}
+            >
+              Blow gently... 🌬️
+            </motion.p>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {phase === "birthday-text" && (
             <motion.div
