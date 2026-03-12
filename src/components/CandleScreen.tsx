@@ -20,72 +20,11 @@ interface CandleScreenProps {
   onComplete: () => void;
 }
 
-/* ── Background-removal hook ──────────────────────────────────────── */
-/**
- * Loads the cake image via Canvas, samples the background colour from the
- * four corners, and makes any pixel within `threshold` colour-distance of
- * that background fully transparent (with a soft 20-px feather on the edge).
- * Returns a data-URL for the processed image, or the original src while loading.
- */
-function useTransparentImage(src: string): string {
-  const [result, setResult] = useState(src);
-
-  useEffect(() => {
-    const img = new Image();
-    img.onload = () => {
-      try {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-
-        ctx.drawImage(img, 0, 0);
-        const iw = img.naturalWidth;
-        const ih = img.naturalHeight;
-        const imageData = ctx.getImageData(0, 0, iw, ih);
-        const { data } = imageData;
-
-        // Sample background from the four corners
-        const corners = [
-          [data[0], data[1], data[2]],
-          [data[(iw - 1) * 4], data[(iw - 1) * 4 + 1], data[(iw - 1) * 4 + 2]],
-          [data[(ih - 1) * iw * 4], data[(ih - 1) * iw * 4 + 1], data[(ih - 1) * iw * 4 + 2]],
-          [data[((ih - 1) * iw + iw - 1) * 4], data[((ih - 1) * iw + iw - 1) * 4 + 1], data[((ih - 1) * iw + iw - 1) * 4 + 2]],
-        ];
-        const bgR = Math.round(corners.reduce((s, p) => s + p[0], 0) / corners.length);
-        const bgG = Math.round(corners.reduce((s, p) => s + p[1], 0) / corners.length);
-        const bgB = Math.round(corners.reduce((s, p) => s + p[2], 0) / corners.length);
-
-        const HARD = 30;   // fully transparent below this distance
-        const SOFT = 55;   // fully opaque above this distance
-
-        for (let i = 0; i < data.length; i += 4) {
-          const dr = data[i] - bgR, dg = data[i + 1] - bgG, db = data[i + 2] - bgB;
-          const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-          if (dist < HARD) {
-            data[i + 3] = 0;
-          } else if (dist < SOFT) {
-            data[i + 3] = Math.round(((dist - HARD) / (SOFT - HARD)) * 255);
-          }
-        }
-        ctx.putImageData(imageData, 0, 0);
-        setResult(canvas.toDataURL("image/png"));
-      } catch {
-        // Canvas CORS failure or other error — keep original
-      }
-    };
-    img.src = src;
-  }, [src]);
-
-  return result;
-}
-
-/* ── Realistic CSS flame (35 % bigger than before) ──────────────── */
+/* ── Realistic CSS flame (35 % bigger) ───────────────────────────── */
 const RealisticFlame = ({ intensity }: { intensity: number }) => {
   if (intensity <= 0) return null;
 
-  const h = Math.round(65 * intensity);   // was 48
+  const h = Math.round(65 * intensity);
 
   return (
     <div style={{ position: "relative", width: "40px", height: `${h + 10}px` }}>
@@ -94,20 +33,16 @@ const RealisticFlame = ({ intensity }: { intensity: number }) => {
         animate={{ opacity: [0.45, 0.72, 0.38, 0.62], scale: [1, 1.14, 0.92, 1.08] }}
         transition={{ duration: 1.7, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: "50%",
+          position: "absolute", bottom: 0, left: "50%",
           transform: "translateX(-50%)",
-          width: "56px",
-          height: `${h + 14}px`,
+          width: "56px", height: `${h + 14}px`,
           borderRadius: "50% 50% 30% 30% / 60% 60% 40% 40%",
           background:
             "radial-gradient(ellipse at 50% 68%, rgba(255,145,0,0.7), rgba(255,65,0,0.22) 58%, transparent 80%)",
           filter: "blur(12px)",
         }}
       />
-
-      {/* Main flame — orange/red outer body */}
+      {/* Main flame */}
       <motion.div
         animate={{
           scaleX: [1, 0.87, 1.11, 0.92, 1.05, 1],
@@ -116,12 +51,9 @@ const RealisticFlame = ({ intensity }: { intensity: number }) => {
         }}
         transition={{ duration: 0.92, repeat: Infinity, ease: "easeInOut" }}
         style={{
-          position: "absolute",
-          bottom: 0,
-          left: "50%",
+          position: "absolute", bottom: 0, left: "50%",
           transform: "translateX(-50%)",
-          width: "24px",
-          height: `${h}px`,
+          width: "24px", height: `${h}px`,
           borderRadius: "50% 50% 28% 28% / 56% 56% 44% 44%",
           background:
             "linear-gradient(to top, #bb1100 0%, #ff3300 12%, #ff6600 32%, #ff9900 58%, #ffcc00 80%, rgba(255,228,110,0.5) 93%, transparent)",
@@ -129,37 +61,26 @@ const RealisticFlame = ({ intensity }: { intensity: number }) => {
           transition: "opacity 0.3s, height 0.15s",
         }}
       />
-
-      {/* Inner flame — yellow */}
+      {/* Inner flame */}
       <motion.div
-        animate={{
-          scaleX: [1, 0.84, 1.08, 0.9, 1],
-          scaleY: [1, 1.09, 0.91, 1.06, 1],
-        }}
+        animate={{ scaleX: [1, 0.84, 1.08, 0.9, 1], scaleY: [1, 1.09, 0.91, 1.06, 1] }}
         transition={{ duration: 0.68, repeat: Infinity, ease: "easeInOut", delay: 0.13 }}
         style={{
-          position: "absolute",
-          bottom: 2,
-          left: "50%",
+          position: "absolute", bottom: 2, left: "50%",
           transform: "translateX(-50%)",
-          width: "13px",
-          height: `${Math.round(h * 0.6)}px`,
+          width: "13px", height: `${Math.round(h * 0.6)}px`,
           borderRadius: "50% 50% 20% 20% / 55% 55% 45% 45%",
           background:
             "linear-gradient(to top, #ffe500 0%, #ffff99 52%, rgba(255,255,190,0.48) 82%, transparent)",
           opacity: intensity,
         }}
       />
-
-      {/* Core — white / pale blue at wick */}
+      {/* Core */}
       <div
         style={{
-          position: "absolute",
-          bottom: 2,
-          left: "50%",
+          position: "absolute", bottom: 2, left: "50%",
           transform: "translateX(-50%)",
-          width: "7px",
-          height: `${Math.round(h * 0.26)}px`,
+          width: "7px", height: `${Math.round(h * 0.26)}px`,
           borderRadius: "50% 50% 30% 30% / 60% 60% 40% 40%",
           background: "linear-gradient(to top, #ccccff, #ffffff 56%, transparent)",
           opacity: intensity,
@@ -169,7 +90,7 @@ const RealisticFlame = ({ intensity }: { intensity: number }) => {
   );
 };
 
-/* ── Smoke trail — 5-second continuous wisps ─────────────────────── */
+/* ── Smoke trail ─────────────────────────────────────────────────── */
 const smokeParticles = [
   { dx:  0,  delay: 0.0,  dur: 4.8, size: 14 },
   { dx: -10, delay: 0.25, dur: 5.2, size: 12 },
@@ -190,12 +111,9 @@ const SmokeTrail = () => (
         animate={{ opacity: 0, y: -110, x: p.dx, scale: 2.6 }}
         transition={{ duration: p.dur, delay: p.delay, ease: [0.12, 0.38, 0.65, 1] }}
         style={{
-          position: "absolute",
-          left: "50%",
-          top: 0,
+          position: "absolute", left: "50%", top: 0,
           marginLeft: `-${p.size / 2}px`,
-          width: `${p.size}px`,
-          height: `${p.size + 8}px`,
+          width: `${p.size}px`, height: `${p.size + 8}px`,
           borderRadius: "50%",
           background: "rgba(195, 195, 195, 0.58)",
           filter: "blur(6px)",
@@ -217,9 +135,6 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const blowCooldownRef = useRef(false);
   const readyForNextBlowRef = useRef(true);
   const { start: startMusic } = useMusic();
-
-  // Process cake image to remove background
-  const cakeSrc = useTransparentImage("/images/cake-nobg.png");
 
   useEffect(() => {
     if (phase !== "intro") return;
@@ -245,19 +160,15 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       const detect = () => {
         analyser.getByteFrequencyData(dataArray);
         const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-
         if (avg < 7) readyForNextBlowRef.current = true;
-
         if (avg > 5 && avg <= 12) {
           setFlameIntensity(Math.max(0.3, 1 - (avg - 5) / 10));
         }
-
         if (avg > 12 && !blowCooldownRef.current && readyForNextBlowRef.current) {
           blowCooldownRef.current = true;
           readyForNextBlowRef.current = false;
           blowCountRef.current += 1;
           setFlameIntensity(0);
-
           if (blowCountRef.current >= 1) {
             setPhase("blown");
             stream.getTracks().forEach((t) => t.stop());
@@ -305,10 +216,8 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       }
     }, 1800);
     return () => {
-      clearTimeout(s1);
-      clearTimeout(s2);
-      clearTimeout(s3);
-      clearTimeout(resume);
+      clearTimeout(s1); clearTimeout(s2);
+      clearTimeout(s3); clearTimeout(resume);
     };
   }, [phase, startDetection]);
 
@@ -349,6 +258,15 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
 
   const isBlown = phase === "blown";
 
+  /*
+   * Cake mask: radial ellipse centered on the cake body (50% H, 68% V).
+   * rx=55%, ry=60% → generous enough to include the full cake.
+   * Solid from 0 → 58%, fades to transparent at 100%.
+   * This cleanly hides the brownish corners without any extra processing.
+   */
+  const cakeMask =
+    "radial-gradient(ellipse 55% 60% at 50% 68%, black 58%, transparent 100%)";
+
   return (
     <div
       className="fixed inset-0 flex flex-col z-50 select-none overflow-hidden bg-candle-dark"
@@ -357,15 +275,48 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
     >
       {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
 
-      {/* Centered text area */}
+      {/* ── "Tap to begin" / "Blow gently" — fixed top-center ───── */}
+      <AnimatePresence>
+        {phase === "waiting" && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="fixed top-0 left-0 right-0 z-20 flex flex-col items-center pt-14 pointer-events-none"
+          >
+            <p
+              className="text-sm tracking-wider"
+              style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
+            >
+              Tap anywhere to begin ✨
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {phase === "listening" && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 0.75 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.8 }}
+            className="fixed top-0 left-0 right-0 z-20 flex flex-col items-center pt-14 pointer-events-none"
+          >
+            <p
+              className="text-sm tracking-wider"
+              style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
+            >
+              Blow gently... 🌬️
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Story text — vertically centered above the cake ──────── */}
       <div className="flex-1 flex flex-col items-center justify-center relative z-10">
 
         <AnimatePresence>
           {phase === "birthday-text" && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
+              initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               transition={{ duration: 1.5 }}
               className="text-center px-8 space-y-4"
             >
@@ -373,8 +324,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                 Happy Birthday Kanze 💖
               </h1>
               <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 transition={{ delay: 1.5, duration: 1 }}
                 className="text-xl"
                 style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Quicksand', sans-serif" }}
@@ -390,7 +340,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             <motion.p
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               transition={{ duration: 1.2 }}
-              className="text-xl px-8 text-center"
+              className="px-8 text-center"
               style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Dancing Script', cursive", fontSize: "1.5rem" }}
             >
               Before Chapter 21 begins...
@@ -403,36 +353,10 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             <motion.p
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
               transition={{ duration: 1.2 }}
-              className="text-xl px-8 text-center"
+              className="px-8 text-center"
               style={{ color: "hsl(340, 60%, 85%)", fontFamily: "'Dancing Script', cursive", fontSize: "1.8rem" }}
             >
               Make a wish.
-            </motion.p>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {phase === "waiting" && (
-            <motion.p
-              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-              className="mt-8 text-sm tracking-wider"
-              style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
-            >
-              Tap to begin ✨
-            </motion.p>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {phase === "listening" && (
-            <motion.p
-              initial={{ opacity: 0 }} animate={{ opacity: 0.7 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-              className="mt-8 text-sm tracking-wider"
-              style={{ color: "hsl(340, 50%, 70%)", fontFamily: "'Quicksand', sans-serif" }}
-            >
-              Blow gently... 🌬️
             </motion.p>
           )}
         </AnimatePresence>
@@ -442,12 +366,12 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
             <motion.div
               initial={{ opacity: 0, y: 0 }} animate={{ opacity: 1, y: -10 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.6 }}
-              className="flex flex-col items-center mt-6"
+              className="flex flex-col items-center"
             >
               <motion.p
                 initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3, duration: 0.5 }}
-                className="text-lg mt-2"
+                className="text-lg"
                 style={{ color: "hsl(340, 60%, 80%)", fontFamily: "'Dancing Script', cursive" }}
               >
                 {blowCountRef.current === 1 ? "Oops, try that again! 😄" : "One last time! 🌬️"}
@@ -470,12 +394,11 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
           >
             <div className="relative" style={{ width: "480px", maxWidth: "100vw" }}>
 
-              {/* Flame + wick — positioned at the strawberry peak (~28% from image top) */}
+              {/* Flame + wick */}
               <div
                 className="absolute left-1/2"
                 style={{ transform: "translateX(-50%)", top: "28%", zIndex: 4 }}
               >
-                {/* Flame — pulled 80px above reference (matches taller flame) */}
                 <div
                   style={{
                     position: "relative",
@@ -488,27 +411,21 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                   <RealisticFlame intensity={flameIntensity} />
                 </div>
 
-                {/* Smoke — rises from wick when blown */}
                 {isBlown && (
                   <div
                     style={{
-                      position: "absolute",
-                      top: "-80px",
-                      left: "50%",
-                      transform: "translateX(-50%)",
-                      zIndex: 5,
+                      position: "absolute", top: "-80px",
+                      left: "50%", transform: "translateX(-50%)", zIndex: 5,
                     }}
                   >
                     <SmokeTrail />
                   </div>
                 )}
 
-                {/* Wick */}
                 <div
                   className="mx-auto"
                   style={{
-                    width: "2px",
-                    height: "10px",
+                    width: "2px", height: "10px",
                     background: isBlown
                       ? "linear-gradient(to bottom, #555, #222)"
                       : "linear-gradient(to bottom, #ff9900, #333)",
@@ -517,13 +434,21 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
                 />
               </div>
 
-              {/* Cake image — background removed via canvas processing */}
+              {/*
+               * Cake image — CSS mask hides the brownish background corners.
+               * No canvas processing; the mask's radial gradient fades the
+               * top/side background areas to transparent while keeping the
+               * full cake (lower-center) clearly visible.
+               */}
               <img
-                src={cakeSrc}
+                src="/images/cake-nobg.png"
                 alt="Birthday cake"
                 className="w-full h-auto block"
                 draggable={false}
-                style={{ imageRendering: "auto" }}
+                style={{
+                  maskImage: cakeMask,
+                  WebkitMaskImage: cakeMask,
+                }}
               />
             </div>
           </motion.div>
