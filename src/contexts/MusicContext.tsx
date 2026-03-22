@@ -1,7 +1,6 @@
 import { createContext, useContext, useRef, useCallback, useEffect, useState } from "react";
 
 const TRACKS = [
-  { src: "/audio/background-song.mp3", title: "Birthday Song" },
   { src: "/audio/whos-dat-girl.mp3", title: "Who's Dat Girl" },
   { src: "/audio/seduce-me.mp3", title: "Seduce Me" },
 ];
