@@ -1,166 +1,56 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useRef, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trash2 } from "lucide-react";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
+import { useGallery, GalleryPhoto } from "@/contexts/GalleryContext";
 
-interface MediaFile {
-  id: number;
-  name: string;
-  url: string;       // object URL for IDB photos, or /images/... for static
-  isVideo: boolean;
-  idb?: boolean;     // true = stored in IndexedDB (can be deleted from IDB)
-}
-
-/* ─── IndexedDB helpers ─────────────────────────────────────────── */
-const DB_NAME  = "kanze-gallery";
-const DB_VER   = 1;
-const STORE    = "photos";
-
-function openDB(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VER);
-    req.onupgradeneeded = () => {
-      if (!req.result.objectStoreNames.contains(STORE)) {
-        req.result.createObjectStore(STORE, { keyPath: "id", autoIncrement: true });
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror   = () => reject(req.error);
-  });
-}
-
-async function idbLoadAll(): Promise<MediaFile[]> {
-  const db = await openDB();
-  return new Promise((resolve) => {
-    const req = db.transaction(STORE, "readonly").objectStore(STORE).getAll();
-    req.onsuccess = () => {
-      const items: MediaFile[] = req.result.map((row: { id: number; name: string; blob: Blob; mime: string }) => ({
-        id:      row.id,
-        name:    row.name,
-        url:     URL.createObjectURL(row.blob),
-        isVideo: row.mime.startsWith("video/"),
-        idb:     true,
-      }));
-      resolve(items);
-    };
-    req.onerror = () => resolve([]);
-  });
-}
-
-async function idbSave(file: File): Promise<MediaFile> {
-  const db = await openDB();
-  return new Promise((resolve, reject) => {
-    const tx    = db.transaction(STORE, "readwrite");
-    const store = tx.objectStore(STORE);
-    const row   = { name: file.name, blob: file, mime: file.type };
-    const req   = store.add(row);
-    req.onsuccess = () => {
-      const id = req.result as number;
-      resolve({
-        id,
-        name:    file.name,
-        url:     URL.createObjectURL(file),
-        isVideo: file.type.startsWith("video/"),
-        idb:     true,
-      });
-    };
-    req.onerror = () => reject(req.error);
-  });
-}
-
-async function idbDelete(id: number): Promise<void> {
-  const db = await openDB();
-  return new Promise((resolve) => {
-    const tx = db.transaction(STORE, "readwrite");
-    tx.objectStore(STORE).delete(id);
-    tx.oncomplete = () => resolve();
-  });
-}
-
-/* ─── Static photos (always shown) ─────────────────────────────── */
-const STATIC_GALLERY: MediaFile[] = [
-  { id: -1, name: "photo1.jpeg", url: "/images/gallery/photo1.jpeg", isVideo: false },
-  { id: -2, name: "photo2.jpeg", url: "/images/gallery/photo2.jpeg", isVideo: false },
-  { id: -3, name: "photo3.jpeg", url: "/images/gallery/photo3.jpeg", isVideo: false },
-  { id: -4, name: "photo4.jpeg", url: "/images/gallery/photo4.jpeg", isVideo: false },
-  { id: -5, name: "photo5.jpeg", url: "/images/gallery/photo5.jpeg", isVideo: false },
-];
-
-/* ─── Component ─────────────────────────────────────────────────── */
 const GalleryPage = () => {
   const navigate = useNavigate();
-  const [files, setFiles]             = useState<MediaFile[]>(STATIC_GALLERY);
-  const [loading, setLoading]         = useState(true);
+  const { photos, loading, addPhotos, deletePhoto } = useGallery();
+  const [uploading, setUploading]   = useState(false);
+  const [confirmId, setConfirmId]   = useState<number | null>(null);
+  const [deleting, setDeleting]     = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
-  const [uploading, setUploading]     = useState(false);
-  const [confirmId, setConfirmId]     = useState<number | null>(null);
-  const [deleting, setDeleting]       = useState<number | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
 
-  /* ── Load static + IDB photos on mount ── */
-  useEffect(() => {
-    idbLoadAll()
-      .then((idbFiles) => setFiles([...STATIC_GALLERY, ...idbFiles]))
-      .catch(() => setFiles(STATIC_GALLERY))
-      .finally(() => setLoading(false));
-  }, []);
-
-  /* ── Add photos ── */
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files;
     if (!picked || picked.length === 0) return;
     setUploading(true);
-    const saved: MediaFile[] = [];
-    for (const file of Array.from(picked)) {
-      try {
-        const m = await idbSave(file);
-        saved.push(m);
-      } catch { /* skip if fails */ }
-    }
-    setFiles((prev) => [...prev, ...saved]);
+    await addPhotos(Array.from(picked));
     setUploading(false);
     e.target.value = "";
   };
 
-  /* ── Delete ── */
-  const handleConfirmDelete = async (e: React.MouseEvent, file: MediaFile) => {
+  const handleConfirmDelete = async (e: React.MouseEvent, photo: GalleryPhoto) => {
     e.stopPropagation();
     setConfirmId(null);
-    setDeleting(file.id);
-
-    if (file.idb) {
-      await idbDelete(file.id).catch(() => {});
-      /* Revoke the object URL to free memory */
-      URL.revokeObjectURL(file.url);
-    }
-
+    setDeleting(photo.id);
     setSelectedIdx((prev) => {
       if (prev === null) return null;
-      const imgs = files.filter((f) => !f.isVideo);
-      if (imgs[prev]?.id === file.id) return null;
+      const imgs = photos.filter((p) => !p.isVideo);
+      if (imgs[prev]?.id === photo.id) return null;
       return prev;
     });
-
-    setFiles((prev) => prev.filter((f) => f.id !== file.id));
+    await deletePhoto(photo);
     setDeleting(null);
   };
 
-  /* ── Lightbox navigation ── */
-  const imageFiles = files.filter((f) => !f.isVideo);
+  /* ── Lightbox ── */
+  const imagePhotos = photos.filter((p) => !p.isVideo);
 
   const goNext = useCallback(() => {
-    setSelectedIdx((i) => (i === null ? null : (i + 1) % imageFiles.length));
-  }, [imageFiles.length]);
+    setSelectedIdx((i) => (i === null ? null : (i + 1) % imagePhotos.length));
+  }, [imagePhotos.length]);
 
   const goPrev = useCallback(() => {
     setSelectedIdx((i) =>
-      i === null ? null : (i - 1 + imageFiles.length) % imageFiles.length
+      i === null ? null : (i - 1 + imagePhotos.length) % imagePhotos.length
     );
-  }, [imageFiles.length]);
+  }, [imagePhotos.length]);
 
   useEffect(() => {
     if (selectedIdx === null) return;
@@ -177,7 +67,6 @@ const GalleryPage = () => {
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
-
   const onTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     const dy = e.changedTouches[0].clientY - touchStartY.current;
@@ -185,7 +74,7 @@ const GalleryPage = () => {
     dx < 0 ? goNext() : goPrev();
   };
 
-  const selected = selectedIdx !== null ? imageFiles[selectedIdx] : null;
+  const selected = selectedIdx !== null ? imagePhotos[selectedIdx] : null;
 
   return (
     <div
@@ -195,7 +84,6 @@ const GalleryPage = () => {
       <PinkParticlesBackground />
 
       <div className="relative z-10 p-4 pb-28">
-        {/* Back button */}
         <motion.button
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}
           onClick={() => navigate("/hub")}
@@ -215,31 +103,41 @@ const GalleryPage = () => {
             <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin"
               style={{ borderColor: "hsl(340, 50%, 75%)", borderTopColor: "transparent" }} />
           </div>
+        ) : photos.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center justify-center mt-20 gap-3"
+          >
+            <span className="text-5xl">📸</span>
+            <p className="text-sm text-center"
+              style={{ color: "hsl(340, 45%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
+              No photos yet — tap + to add some!
+            </p>
+          </motion.div>
         ) : (
           <div className="columns-2 gap-3 space-y-3">
-            {files.map((file, i) => {
-              const isPending     = confirmId === file.id;
-              const isBeingDeleted = deleting === file.id;
-
+            {photos.map((photo, i) => {
+              const isPending      = confirmId === photo.id;
+              const isBeingDeleted = deleting  === photo.id;
               return (
                 <motion.div
-                  key={file.id}
+                  key={photo.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: isBeingDeleted ? 0 : 1, scale: isBeingDeleted ? 0.85 : 1 }}
                   transition={{ duration: isBeingDeleted ? 0.25 : 0.4, delay: isBeingDeleted ? 0 : i * 0.04 }}
-                  className="break-inside-avoid rounded-[1.2rem] overflow-hidden cursor-pointer group relative"
+                  className="break-inside-avoid rounded-[1.2rem] overflow-hidden cursor-pointer relative"
                   style={{ boxShadow: "0 1px 6px hsl(340 30% 60% / 0.1)" }}
                   onClick={() => {
                     if (isPending) { setConfirmId(null); return; }
-                    if (!file.isVideo) {
-                      setSelectedIdx(imageFiles.findIndex((f) => f.id === file.id));
+                    if (!photo.isVideo) {
+                      setSelectedIdx(imagePhotos.findIndex((p) => p.id === photo.id));
                     }
                   }}
                 >
-                  {file.isVideo ? (
-                    <video src={file.url} className="w-full rounded-[1.2rem]" muted playsInline />
+                  {photo.isVideo ? (
+                    <video src={photo.url} className="w-full rounded-[1.2rem]" muted playsInline />
                   ) : (
-                    <img src={file.url} alt={file.name} className="w-full rounded-[1.2rem]" loading="lazy" />
+                    <img src={photo.url} alt={photo.name} className="w-full rounded-[1.2rem]" loading="lazy" />
                   )}
 
                   {/* Confirm-delete overlay */}
@@ -252,12 +150,13 @@ const GalleryPage = () => {
                         style={{ background: "hsl(0 0% 0% / 0.55)" }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <p className="text-white text-xs font-semibold" style={{ fontFamily: "'Quicksand', sans-serif" }}>
+                        <p className="text-white text-xs font-semibold"
+                          style={{ fontFamily: "'Quicksand', sans-serif" }}>
                           Delete photo?
                         </p>
                         <div className="flex gap-2">
                           <button
-                            onClick={(e) => handleConfirmDelete(e, file)}
+                            onClick={(e) => handleConfirmDelete(e, photo)}
                             className="px-3 py-1 rounded-full text-xs font-semibold text-white"
                             style={{ background: "hsl(0, 70%, 55%)" }}
                           >Delete</button>
@@ -271,10 +170,10 @@ const GalleryPage = () => {
                     )}
                   </AnimatePresence>
 
-                  {/* Trash icon — only on user-added photos */}
-                  {!isPending && file.idb && (
+                  {/* Trash icon — on ALL photos */}
+                  {!isPending && (
                     <button
-                      onClick={(e) => { e.stopPropagation(); setConfirmId(file.id); }}
+                      onClick={(e) => { e.stopPropagation(); setConfirmId(photo.id); }}
                       className="absolute top-2 right-2 w-7 h-7 rounded-full flex items-center justify-center"
                       style={{ background: "hsl(0 0% 0% / 0.38)", color: "white" }}
                       aria-label="Delete photo"
@@ -289,9 +188,8 @@ const GalleryPage = () => {
         )}
       </div>
 
-      {/* File input — sr-only keeps it accessible without display:none */}
+      {/* File input */}
       <input
-        ref={fileInputRef}
         id="gallery-upload"
         type="file"
         accept="image/*,video/*"
@@ -300,7 +198,7 @@ const GalleryPage = () => {
         onChange={handleFileChange}
       />
 
-      {/* Floating Add button */}
+      {/* Floating + button */}
       <motion.label
         htmlFor={uploading ? undefined : "gallery-upload"}
         initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
@@ -316,17 +214,17 @@ const GalleryPage = () => {
       >
         {uploading
           ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-          : <span className="text-2xl leading-none">+</span>
-        }
+          : <span className="text-2xl leading-none">+</span>}
       </motion.label>
 
       <div className="fixed bottom-[4.5rem] right-5 z-30 text-center" style={{ width: "3.5rem" }}>
-        <span className="text-[9px] tracking-wide" style={{ color: "hsl(340, 50%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
+        <span className="text-[9px] tracking-wide"
+          style={{ color: "hsl(340, 50%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
           {uploading ? "Adding…" : "Add"}
         </span>
       </div>
 
-      {/* ── Lightbox ── */}
+      {/* Lightbox */}
       <AnimatePresence>
         {selected && (
           <motion.div
@@ -343,12 +241,11 @@ const GalleryPage = () => {
             >←</button>
 
             <div className="absolute top-5 right-5 z-[60] px-3 py-1 rounded-full text-xs"
-              style={{ background: "hsl(340 60% 92% / 0.9)", color: "hsl(340, 40%, 35%)", fontFamily: "'Quicksand', sans-serif" }}
-            >
-              {(selectedIdx ?? 0) + 1} / {imageFiles.length}
+              style={{ background: "hsl(340 60% 92% / 0.9)", color: "hsl(340, 40%, 35%)", fontFamily: "'Quicksand', sans-serif" }}>
+              {(selectedIdx ?? 0) + 1} / {imagePhotos.length}
             </div>
 
-            {imageFiles.length > 1 && (
+            {imagePhotos.length > 1 && (
               <button onClick={(e) => { e.stopPropagation(); goPrev(); }}
                 className="absolute left-3 z-[60] rounded-full w-10 h-10 flex items-center justify-center shadow-md"
                 style={{ background: "hsl(340 60% 92% / 0.85)", color: "hsl(340, 40%, 30%)" }}
@@ -362,15 +259,14 @@ const GalleryPage = () => {
                 animate={{ opacity: 1, scale: 1, x: 0 }}
                 exit={{ opacity: 0, scale: 0.94, x: -30 }}
                 transition={{ duration: 0.2 }}
-                src={selected.url}
-                alt={selected.name}
+                src={selected.url} alt={selected.name}
                 className="max-w-[92vw] max-h-[82vh] rounded-2xl"
                 style={{ boxShadow: "0 4px 32px hsl(0 0% 0% / 0.5)" }}
                 onClick={(e) => e.stopPropagation()}
               />
             </AnimatePresence>
 
-            {imageFiles.length > 1 && (
+            {imagePhotos.length > 1 && (
               <button onClick={(e) => { e.stopPropagation(); goNext(); }}
                 className="absolute right-3 z-[60] rounded-full w-10 h-10 flex items-center justify-center shadow-md"
                 style={{ background: "hsl(340 60% 92% / 0.85)", color: "hsl(340, 40%, 30%)" }}

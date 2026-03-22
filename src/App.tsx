@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import { MusicProvider } from "@/contexts/MusicContext";
+import { GalleryProvider } from "@/contexts/GalleryContext";
 
 import Index from "./pages/Index";
 import MemoryHub from "./components/MemoryHub";
@@ -80,13 +81,15 @@ const App = () => (
       <Toaster />
       <Sonner />
       <PWAInstallGate>
-        <MusicProvider>
-          <BrowserRouter>
-            <RefreshGuard>
-              <AnimatedRoutes />
-            </RefreshGuard>
-          </BrowserRouter>
-        </MusicProvider>
+        <GalleryProvider>
+          <MusicProvider>
+            <BrowserRouter>
+              <RefreshGuard>
+                <AnimatedRoutes />
+              </RefreshGuard>
+            </BrowserRouter>
+          </MusicProvider>
+        </GalleryProvider>
       </PWAInstallGate>
     </TooltipProvider>
   </QueryClientProvider>
