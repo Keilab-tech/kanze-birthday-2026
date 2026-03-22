@@ -1,136 +1,231 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChevronDown, Home } from "lucide-react";
+import { Home, Images, BookOpen, Mail, Flower2 } from "lucide-react";
 import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
 import PhotoSlider from "./PhotoSlider";
 
-const softButtonStyle = {
-  background: "hsl(340, 55%, 75%)",
-  color: "white",
-  boxShadow: "0 2px 8px hsl(340 40% 60% / 0.2)",
-};
+const NAV_CARDS = [
+  {
+    label: "Gallery",
+    sublabel: "Our photos",
+    icon: Images,
+    path: "/gallery",
+    delay: 0.55,
+    accent: "hsl(340, 70%, 72%)",
+    glow: "hsl(340 60% 70% / 0.22)",
+  },
+  {
+    label: "Moments",
+    sublabel: "Sweet memories",
+    icon: BookOpen,
+    path: "/moments",
+    delay: 0.65,
+    accent: "hsl(350, 65%, 68%)",
+    glow: "hsl(350 55% 68% / 0.22)",
+  },
+  {
+    label: "A Letter",
+    sublabel: "From the heart",
+    icon: Mail,
+    path: "/letter",
+    delay: 0.75,
+    accent: "hsl(330, 68%, 65%)",
+    glow: "hsl(330 58% 65% / 0.22)",
+  },
+  {
+    label: "Flowers",
+    sublabel: "Something secret",
+    icon: Flower2,
+    path: "/flowers",
+    delay: 0.85,
+    accent: "hsl(10, 65%, 68%)",
+    glow: "hsl(10 55% 68% / 0.22)",
+  },
+];
 
 const MemoryHub = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-princess-gradient relative overflow-x-hidden overflow-y-auto">
+    <div className="min-h-screen relative overflow-x-hidden overflow-y-auto"
+      style={{
+        background: "linear-gradient(160deg, hsl(340,90%,96%) 0%, hsl(350,75%,92%) 45%, hsl(20,85%,94%) 100%)",
+      }}
+    >
       <PinkParticlesBackground />
 
-      {/* Home button — returns to candle/cake screen */}
+      {/* Home button */}
       <motion.button
-        initial={{ opacity: 0, scale: 0.8 }}
+        initial={{ opacity: 0, scale: 0.7 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.5, duration: 0.4 }}
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.92 }}
+        transition={{ delay: 0.4, duration: 0.4, type: "spring", stiffness: 200 }}
+        whileHover={{ scale: 1.12 }}
+        whileTap={{ scale: 0.9 }}
         onClick={() => navigate("/")}
         data-testid="button-home"
         title="Back to cake"
-        className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center transition-shadow"
+        className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center"
         style={{
-          background: "hsl(340, 55%, 90%)",
-          boxShadow: "0 2px 12px hsl(340 50% 70% / 0.35)",
-          border: "1.5px solid hsl(340, 50%, 80%)",
-          color: "hsl(340, 60%, 55%)",
+          background: "hsl(0 0% 100% / 0.65)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          boxShadow: "0 2px 16px hsl(340 50% 70% / 0.25), inset 0 1px 0 hsl(0 0% 100% / 0.8)",
+          border: "1px solid hsl(340, 45%, 85%)",
+          color: "hsl(340, 65%, 55%)",
         }}
       >
-        <Home size={18} />
+        <Home size={17} />
       </motion.button>
 
-      <div className="relative z-10 flex flex-col items-center px-6 pb-16">
-        {/* Photo Slider — fills top half */}
+      <div className="relative z-10 flex flex-col items-center pb-20">
+
+        {/* ── Photo Slider ── */}
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.8 }}
-          className="w-full"
-          style={{ height: "50vh" }}
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, ease: "easeOut" }}
+          className="w-full relative"
+          style={{ height: "46vh" }}
         >
           <PhotoSlider />
+          {/* bottom fade */}
+          <div
+            className="absolute bottom-0 left-0 right-0 h-16 pointer-events-none"
+            style={{
+              background: "linear-gradient(to top, hsl(340,90%,96%), transparent)",
+            }}
+          />
         </motion.div>
 
-        {/* Scroll indicator */}
+        {/* ── Greeting ── */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 0.8 }}
-          className="my-3"
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.25 }}
+          className="text-center px-6 mt-1 mb-7"
         >
-          <motion.div
-            animate={{ y: [0, 8, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          <p
+            className="text-xs font-semibold uppercase tracking-[0.22em] mb-1"
+            style={{ color: "hsl(340, 50%, 62%)", fontFamily: "'Quicksand', sans-serif" }}
           >
-            <ChevronDown size={22} style={{ color: "hsl(340, 60%, 65%)" }} />
-          </motion.div>
+            celebrating you
+          </p>
+          <h1
+            className="text-[2.6rem] leading-tight"
+            style={{
+              fontFamily: "'Dancing Script', cursive",
+              fontWeight: 700,
+              background: "linear-gradient(135deg, hsl(340,80%,58%) 0%, hsl(350,70%,52%) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Happy Birthday,
+          </h1>
+          <h1
+            className="text-[3rem] leading-tight -mt-1"
+            style={{
+              fontFamily: "'Dancing Script', cursive",
+              fontWeight: 700,
+              background: "linear-gradient(135deg, hsl(350,75%,55%) 0%, hsl(10,70%,58%) 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}
+          >
+            Kanze ✨
+          </h1>
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: 0.3 }}
-          className="text-4xl md:text-5xl text-primary mt-6 mb-10"
-        >
-          Your Memories
-        </motion.h1>
-
-        <div className="flex flex-row gap-4 w-full max-w-xs justify-center">
-          <motion.button
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => navigate("/gallery")}
-            className="rounded-full py-3 px-8 text-sm font-medium transition-shadow"
-            style={softButtonStyle}
-          >
-            Gallery
-          </motion.button>
-
-          <motion.button
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => navigate("/moments")}
-            className="rounded-full py-3 px-8 text-sm font-medium transition-shadow"
-            style={softButtonStyle}
-          >
-            Moments
-          </motion.button>
+        {/* ── Nav Cards ── */}
+        <div className="w-full max-w-sm px-5 grid grid-cols-2 gap-3">
+          {NAV_CARDS.map((card) => {
+            const Icon = card.icon;
+            return (
+              <motion.button
+                key={card.path}
+                initial={{ opacity: 0, y: 22, scale: 0.94 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.55, delay: card.delay, ease: [0.22, 1, 0.36, 1] }}
+                whileHover={{ scale: 1.04, y: -2 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => navigate(card.path)}
+                data-testid={`button-nav-${card.label.toLowerCase()}`}
+                className="relative flex flex-col items-start gap-2 rounded-2xl p-4 text-left overflow-hidden"
+                style={{
+                  background: "hsl(0 0% 100% / 0.52)",
+                  backdropFilter: "blur(16px)",
+                  WebkitBackdropFilter: "blur(16px)",
+                  border: "1px solid hsl(0 0% 100% / 0.75)",
+                  boxShadow: `0 4px 20px ${card.glow}, inset 0 1px 0 hsl(0 0% 100% / 0.9)`,
+                }}
+              >
+                {/* icon bubble */}
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{
+                    background: `linear-gradient(135deg, ${card.accent} 0%, ${card.accent.replace(")", ", 0.75)").replace("hsl", "hsla")} 100%)`,
+                    boxShadow: `0 3px 10px ${card.glow}`,
+                  }}
+                >
+                  <Icon size={17} color="white" strokeWidth={2} />
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-semibold leading-tight"
+                    style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
+                  >
+                    {card.label}
+                  </p>
+                  <p
+                    className="text-[11px] leading-tight mt-0.5"
+                    style={{ color: "hsl(340, 30%, 55%)", fontFamily: "'Quicksand', sans-serif" }}
+                  >
+                    {card.sublabel}
+                  </p>
+                </div>
+                {/* subtle shimmer corner */}
+                <div
+                  className="absolute top-0 right-0 w-14 h-14 rounded-bl-full opacity-20 pointer-events-none"
+                  style={{ background: card.accent }}
+                />
+              </motion.button>
+            );
+          })}
         </div>
 
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1.2 }}
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
-          onClick={() => navigate("/letter")}
-          className="mt-6 rounded-full py-3 px-8 text-sm font-medium transition-shadow"
-          style={softButtonStyle}
-        >
-          Click Me 💌
-        </motion.button>
-
-        {/* Inline music player */}
+        {/* ── Divider ── */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, delay: 1.5 }}
-          className="mt-8 w-full flex justify-center"
+          initial={{ opacity: 0, scaleX: 0.5 }}
+          animate={{ opacity: 1, scaleX: 1 }}
+          transition={{ delay: 1, duration: 0.6 }}
+          className="w-24 h-px mt-8 mb-6 rounded-full"
+          style={{ background: "linear-gradient(90deg, transparent, hsl(340,60%,75%), transparent)" }}
+        />
+
+        {/* ── Music Player ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 1.05 }}
+          className="w-full max-w-sm px-5"
         >
           <MusicPlayerBar />
         </motion.div>
 
-        {/* Birthday countdown */}
-        <div className="mt-8">
+        {/* ── Countdown ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 1.2 }}
+          className="mt-6 w-full max-w-sm px-5"
+        >
           <BirthdayCountdown />
-        </div>
+        </motion.div>
+
       </div>
     </div>
   );
