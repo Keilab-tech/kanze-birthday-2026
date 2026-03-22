@@ -212,18 +212,31 @@ const PinkParticlesBackground = () => {
       ctx.restore();
     };
 
-    /* ── Main loop ────────────────────────────────────────────────── */
+    /* ── Main loop (delta-time so speed never changes) ───────────── */
     const particles: Particle[] = [];
     let frame = 0, animId = 0;
+    let lastTs = 0;
+    /* Accumulate real time for burst scheduling (in "60-fps frames") */
+    let frameAccum = 0;
 
-    const animate = () => {
+    const animate = (ts: number) => {
+      /* dt: how many 60-fps frames worth of time has passed.
+         Clamp to 3 so a tab-refocus never causes a huge jump. */
+      const raw = lastTs === 0 ? 1 : (ts - lastTs) / (1000 / 60);
+      const dt  = Math.min(raw, 3);
+      lastTs = ts;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frame++;
+      frameAccum += dt;
 
-      if (particles.length < MAX_PARTICLES && Math.random() < 0.09)
+      /* Normal trickle — probability scales with dt so rate stays constant */
+      if (particles.length < MAX_PARTICLES && Math.random() < 0.09 * dt)
         particles.push(spawnParticle());
 
-      if (frame % BURST_EVERY === 0) {
+      /* Burst every BURST_EVERY equivalent frames */
+      if (frameAccum >= BURST_EVERY) {
+        frameAccum -= BURST_EVERY;
         const bx = 60 + Math.random() * (canvas.width - 120);
         const n  = 6 + Math.floor(Math.random() * 5);
         for (let k = 0; k < n; k++)
@@ -234,23 +247,28 @@ const PinkParticlesBackground = () => {
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
-        p.life++;
-        p.rot += p.rotSpeed;
 
-        p.x += p.vx + Math.sin(p.life * p.driftFreq + p.driftPhase) * p.driftAmp;
-        p.y += p.vy;
+        /* Advance life in fractional frames so fade envelopes are time-accurate */
+        p.life += dt;
+        p.rot  += p.rotSpeed * dt;
 
+        /* Move — every component scaled by dt */
+        p.x += (p.vx + Math.sin(p.life * p.driftFreq + p.driftPhase) * p.driftAmp) * dt;
+        p.y += p.vy * dt;
+
+        /* Mouse soft repulsion */
         if (mx > 0) {
           const dx = p.x - mx, dy = p.y - my;
           const d2 = dx * dx + dy * dy;
           if (d2 < 8100) {
             const d = Math.sqrt(d2);
             const f = ((90 - d) / 90) * 0.9;
-            p.x += (dx / d) * f;
-            p.y += (dy / d) * f;
+            p.x += (dx / d) * f * dt;
+            p.y += (dy / d) * f * dt;
           }
         }
 
+        /* Alpha envelope */
         const fadeIn  = Math.min(p.life / 45, 1);
         const fadeOut = Math.max(0, 1 - Math.max(0, p.life - p.maxLife + 65) / 65);
         const twinkle = p.type === "star"
@@ -258,6 +276,7 @@ const PinkParticlesBackground = () => {
           : 1.0;
         p.alpha = fadeIn * fadeOut * 0.78 * twinkle;
 
+        /* Cull */
         if (p.life > p.maxLife || p.y < -80) {
           particles.splice(i, 1);
           continue;
@@ -284,7 +303,7 @@ const PinkParticlesBackground = () => {
 
       animId = requestAnimationFrame(animate);
     };
-    animate();
+    animId = requestAnimationFrame(animate);
 
     return () => {
       cancelAnimationFrame(animId);
