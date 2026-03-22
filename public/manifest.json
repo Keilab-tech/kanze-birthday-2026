@@ -4,8 +4,8 @@
   "description": "A private luxury birthday experience",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#ff2e9f",
+  "background_color": "#0d0010",
+  "theme_color": "#0d0010",
   "orientation": "portrait",
   "icons": [
     {

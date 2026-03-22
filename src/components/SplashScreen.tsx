@@ -65,7 +65,7 @@ export default function SplashScreen({ onDone }: Props) {
       {phase !== "out" ? (
         <motion.div
           key="splash"
-          initial={{ opacity: 0 }}
+          initial={{ opacity: 1 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.04 }}
           transition={{ duration: 0.45 }}

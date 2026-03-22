@@ -5,9 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Kanze</title>
     <meta name="description" content="Kanze's Birthday Time Capsule — a cinematic birthday experience" />
-    <meta name="theme-color" content="#ff2e9f" />
+    <meta name="theme-color" content="#0d0010" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Kanze" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="icon" href="/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="/icon-192.png" />
@@ -15,6 +16,12 @@
     <meta property="og:title" content="Kanze's Birthday Time Capsule" />
     <meta property="og:description" content="A cinematic birthday experience" />
     <meta property="og:type" content="website" />
+
+    <!-- Match native splash background so the transition is invisible -->
+    <style>
+      html, body { margin: 0; padding: 0; background: #0d0010; }
+      #root { min-height: 100vh; }
+    </style>
   </head>
 
   <body>
