@@ -406,7 +406,12 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       {["intro","candle","wish","waiting","listening","smoke-relight"].includes(phase) && (
         <button
           data-testid="button-skip-candle"
-          onClick={() => { playTrack(0, 35); onComplete(); }}
+          onClick={() => {
+            /* Stop mic detection if active, then jump straight to blown phase */
+            if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+            audioContextRef.current?.close().catch(() => {});
+            setPhase("blown");
+          }}
           style={{
             position: "fixed", bottom: 28, right: 22, zIndex: 30,
             background: "rgba(255,255,255,0.08)",
