@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import Fireworks from "./Fireworks";
+import CornerFireworks from "./CornerFireworks";
 import { useMusic } from "@/contexts/MusicContext";
 
 type Phase =
@@ -397,6 +398,9 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       onClick={phase === "waiting" ? startListening : undefined}
     >
       {phase === "fireworks" && <Fireworks onComplete={handleFireworksComplete} />}
+
+      {/* Corner fireworks — visible before music starts, fade out on blow */}
+      <CornerFireworks active={!["blown","fireworks","birthday-text","done"].includes(phase)} />
 
       {/* ── All text – fixed top, clear of the cake ────────────────── */}
       <div className="fixed top-0 inset-x-0 z-20 flex flex-col items-center pt-16 pointer-events-none">
