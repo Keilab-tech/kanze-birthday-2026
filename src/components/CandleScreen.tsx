@@ -361,13 +361,9 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   useEffect(() => {
     if (phase !== "blown") return;
     setFlameIntensity(0);
+    playTrack(2, 30); // "Who's Dat Girl" from 0:30 — starts immediately on blow-out
     const t = setTimeout(() => setPhase("fireworks"), 5000);
     return () => clearTimeout(t);
-  }, [phase]);
-
-  useEffect(() => {
-    if (phase !== "fireworks") return;
-    playTrack(2, 30); // "Who's Dat Girl" from 0:30 — first song, plays when fireworks shoot
   }, [phase, playTrack]);
 
   const handleFireworksComplete = useCallback(() => {
