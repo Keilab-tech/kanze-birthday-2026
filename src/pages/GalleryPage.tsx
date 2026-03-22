@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
@@ -20,23 +20,34 @@ const STATIC_GALLERY: MediaFile[] = [
 
 const GalleryPage = () => {
   const navigate = useNavigate();
-  const [files, setFiles] = useState<MediaFile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState<MediaFile | null>(null);
+  const [files, setFiles]         = useState<MediaFile[]>(STATIC_GALLERY);
+  const [loading, setLoading]     = useState(true);
+  const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* Touch swipe state */
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+
+  /* ── Merge DB files with static, keeping static always present ── */
+  const mergeFiles = (dbData: MediaFile[]): MediaFile[] => {
+    const merged = [...STATIC_GALLERY];
+    dbData.forEach((f) => {
+      if (!merged.some((s) => s.url === f.url)) merged.push(f);
+    });
+    return merged;
+  };
 
   const loadGallery = () => {
     fetch("/api/media/gallery")
       .then((r) => r.json())
-      .then((data: MediaFile[]) => setFiles(data.length ? data : STATIC_GALLERY))
+      .then((data: MediaFile[]) => setFiles(mergeFiles(data)))
       .catch(() => setFiles(STATIC_GALLERY))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => {
-    loadGallery();
-  }, []);
+  useEffect(() => { loadGallery(); }, []);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files;
@@ -58,6 +69,47 @@ const GalleryPage = () => {
       loadGallery();
     }
   };
+
+  /* ── Lightbox navigation ─────────────────────────────────────── */
+  const imageFiles = files.filter((f) => !f.isVideo);
+
+  const goNext = useCallback(() => {
+    setSelectedIdx((i) => (i === null ? null : (i + 1) % imageFiles.length));
+  }, [imageFiles.length]);
+
+  const goPrev = useCallback(() => {
+    setSelectedIdx((i) =>
+      i === null ? null : (i - 1 + imageFiles.length) % imageFiles.length
+    );
+  }, [imageFiles.length]);
+
+  /* Keyboard arrow navigation */
+  useEffect(() => {
+    if (selectedIdx === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") goNext();
+      if (e.key === "ArrowLeft")  goPrev();
+      if (e.key === "Escape")     setSelectedIdx(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedIdx, goNext, goPrev]);
+
+  /* Touch swipe handlers */
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = e.changedTouches[0].clientY - touchStartY.current;
+    if (Math.abs(dx) < Math.abs(dy) * 1.2) return; /* mostly vertical — ignore */
+    if (Math.abs(dx) < 45) return;
+    dx < 0 ? goNext() : goPrev();
+  };
+
+  const selected = selectedIdx !== null ? imageFiles[selectedIdx] : null;
 
   return (
     <div className="min-h-screen bg-princess-gradient relative overflow-hidden">
@@ -85,7 +137,6 @@ const GalleryPage = () => {
           Gallery 💕
         </motion.h1>
 
-        {/* Content */}
         {loading ? (
           <div className="flex justify-center items-center h-40">
             <div
@@ -93,17 +144,6 @@ const GalleryPage = () => {
               style={{ borderColor: "hsl(340, 50%, 75%)", borderTopColor: "transparent" }}
             />
           </div>
-        ) : files.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center mt-20 gap-3"
-          >
-            <span className="text-4xl">📷</span>
-            <p className="text-center" style={{ color: "hsl(340, 40%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
-              No photos yet. Add some memories!
-            </p>
-          </motion.div>
         ) : (
           <div className="columns-2 gap-3 space-y-3">
             {files.map((file, i) => (
@@ -115,7 +155,12 @@ const GalleryPage = () => {
                 whileTap={{ scale: 1.02 }}
                 className="break-inside-avoid rounded-[1.2rem] overflow-hidden cursor-pointer group relative"
                 style={{ boxShadow: "0 1px 6px hsl(340 30% 60% / 0.1)" }}
-                onClick={() => setSelected(file)}
+                onClick={() => {
+                  if (!file.isVideo) {
+                    const idx = imageFiles.findIndex((f) => f.url === file.url);
+                    setSelectedIdx(idx);
+                  }
+                }}
               >
                 {file.isVideo ? (
                   <video src={file.url} className="w-full rounded-[1.2rem]" muted playsInline />
@@ -129,7 +174,7 @@ const GalleryPage = () => {
                 )}
                 <div
                   className="absolute inset-0 rounded-[1.2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  style={{ background: "hsl(340, 80%, 70% / 0.08)" }}
+                  style={{ background: "hsl(340 80% 70% / 0.08)" }}
                 />
               </motion.div>
             ))}
@@ -137,7 +182,7 @@ const GalleryPage = () => {
         )}
       </div>
 
-      {/* Hidden file input — accepts photos & videos from phone storage/camera */}
+      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -166,64 +211,94 @@ const GalleryPage = () => {
         }}
       >
         {uploading ? (
-          <div
-            className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin"
-          />
+          <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
         ) : (
           <span className="text-2xl leading-none">+</span>
         )}
       </motion.button>
 
-      {/* Add label below FAB */}
-      <div
-        className="fixed bottom-[4.5rem] right-5 z-30 text-center"
-        style={{ width: "3.5rem" }}
-      >
-        <span
-          className="text-[9px] tracking-wide"
-          style={{ color: "hsl(340, 50%, 55%)", fontFamily: "'Quicksand', sans-serif" }}
-        >
+      <div className="fixed bottom-[4.5rem] right-5 z-30 text-center" style={{ width: "3.5rem" }}>
+        <span className="text-[9px] tracking-wide" style={{ color: "hsl(340, 50%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
           {uploading ? "Adding…" : "Add"}
         </span>
       </div>
 
-      {/* Lightbox */}
+      {/* ── Lightbox with swipe ───────────────────────────────────── */}
       <AnimatePresence>
         {selected && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4"
-            onClick={() => setSelected(null)}
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center"
+            onClick={() => setSelectedIdx(null)}
+            onTouchStart={onTouchStart}
+            onTouchEnd={onTouchEnd}
           >
+            {/* Close */}
             <button
-              onClick={(e) => { e.stopPropagation(); setSelected(null); }}
+              onClick={(e) => { e.stopPropagation(); setSelectedIdx(null); }}
               className="absolute top-5 left-5 z-[60] rounded-full w-11 h-11 flex items-center justify-center shadow-sm text-lg font-medium"
               style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 30%)" }}
             >
               ←
             </button>
-            {selected.isVideo ? (
-              <video
-                src={selected.url}
-                controls
-                autoPlay
-                className="max-w-full max-h-[85vh] rounded-2xl"
-                onClick={(e) => e.stopPropagation()}
-              />
-            ) : (
+
+            {/* Counter */}
+            <div
+              className="absolute top-5 right-5 z-[60] px-3 py-1 rounded-full text-xs"
+              style={{ background: "hsl(340 60% 92% / 0.9)", color: "hsl(340, 40%, 35%)", fontFamily: "'Quicksand', sans-serif" }}
+            >
+              {(selectedIdx ?? 0) + 1} / {imageFiles.length}
+            </div>
+
+            {/* Prev arrow */}
+            {imageFiles.length > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                className="absolute left-3 z-[60] rounded-full w-10 h-10 flex items-center justify-center shadow-md"
+                style={{ background: "hsl(340 60% 92% / 0.85)", color: "hsl(340, 40%, 30%)" }}
+              >
+                ‹
+              </button>
+            )}
+
+            {/* Image */}
+            <AnimatePresence mode="wait">
               <motion.img
-                initial={{ scale: 0.85 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.25 }}
+                key={selected.url}
+                initial={{ opacity: 0, scale: 0.94, x: 30 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                exit={{ opacity: 0, scale: 0.94, x: -30 }}
+                transition={{ duration: 0.2 }}
                 src={selected.url}
                 alt={selected.name}
-                className="max-w-full max-h-[85vh] rounded-2xl"
-                style={{ boxShadow: "0 4px 20px hsl(0 0% 0% / 0.3)" }}
+                className="max-w-[92vw] max-h-[82vh] rounded-2xl"
+                style={{ boxShadow: "0 4px 32px hsl(0 0% 0% / 0.5)" }}
                 onClick={(e) => e.stopPropagation()}
               />
+            </AnimatePresence>
+
+            {/* Next arrow */}
+            {imageFiles.length > 1 && (
+              <button
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                className="absolute right-3 z-[60] rounded-full w-10 h-10 flex items-center justify-center shadow-md"
+                style={{ background: "hsl(340 60% 92% / 0.85)", color: "hsl(340, 40%, 30%)" }}
+              >
+                ›
+              </button>
             )}
+
+            {/* Swipe hint — fades after first open */}
+            <motion.p
+              initial={{ opacity: 0.7 }} animate={{ opacity: 0 }}
+              transition={{ delay: 1.5, duration: 1 }}
+              className="absolute bottom-8 text-xs pointer-events-none"
+              style={{ color: "hsl(340 60% 85% / 0.8)", fontFamily: "'Quicksand', sans-serif" }}
+            >
+              swipe or use arrows to browse
+            </motion.p>
           </motion.div>
         )}
       </AnimatePresence>
