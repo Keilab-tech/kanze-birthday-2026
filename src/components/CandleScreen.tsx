@@ -227,6 +227,8 @@ const SmokeTrail = () => (
 /* ── Main component ──────────────────────────────────────────────── */
 const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const [phase, setPhase] = useState<Phase>("intro");
+  const phaseRef = useRef<Phase>("intro");
+  phaseRef.current = phase; // keep ref in sync on every render — safe for async guards
   const [flameIntensity, setFlameIntensity] = useState(1);
   const [blowLevel, setBlowLevel] = useState(0);  // 0–1 wiggle amount
   const blowCountRef = useRef(0);
@@ -326,9 +328,14 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   );
 
   const startListening = useCallback(async () => {
-    if (phase !== "waiting") return;
+    if (phaseRef.current !== "waiting") return; /* ref is always current — safe even for async */
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      /* Re-check after async gap — Skip may have fired while getUserMedia was pending */
+      if (phaseRef.current !== "waiting") {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       streamRef.current = stream;
       const audioContext = new AudioContext();
       const source = audioContext.createMediaStreamSource(stream);
@@ -340,7 +347,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       setPhase("listening");
       startDetection(analyser, stream, audioContext);
     } catch {
-      setPhase("listening");
+      if (phaseRef.current === "waiting") setPhase("listening");
     }
   }, [phase]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -406,8 +413,8 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       {["intro","candle","wish","waiting","listening","smoke-relight"].includes(phase) && (
         <button
           data-testid="button-skip-candle"
-          onClick={() => {
-            /* Stop mic detection if active, then jump straight to blown phase */
+          onClick={(e) => {
+            e.stopPropagation(); /* prevent bubbling to outer div's startListening */
             if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
             audioContextRef.current?.close().catch(() => {});
             setPhase("blown");
