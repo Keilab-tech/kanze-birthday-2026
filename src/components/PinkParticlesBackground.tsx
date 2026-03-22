@@ -17,14 +17,20 @@ interface Particle {
 }
 
 const MAX_PARTICLES = 50;
-const BURST_EVERY   = 260; // frames (~4 s @ 60 fps)
+const BURST_EVERY   = 260;
 
 /* ── Component ─────────────────────────────────────────────────────── */
 const PinkParticlesBackground = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const mouseRef  = useRef({ x: -9999, y: -9999 });
+  const imgRef    = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
+    /* Pre-load Kanze photo for heart particles */
+    const img = new Image();
+    img.src = "/images/kanze-heart.jpeg";
+    imgRef.current = img;
+
     const canvas = canvasRef.current!;
     const ctx    = canvas.getContext("2d")!;
 
@@ -62,7 +68,7 @@ const PinkParticlesBackground = () => {
         dot:      [2, 5],
       };
       const [mn, mx] = sizes[type];
-      const hue = 315 + Math.random() * 60; // rose → magenta range
+      const hue = 315 + Math.random() * 60;
 
       return {
         x: x ?? Math.random() * canvas.width,
@@ -88,7 +94,6 @@ const PinkParticlesBackground = () => {
     };
 
     /* ── Draw helpers ─────────────────────────────────────────────── */
-    /* Centered heart, drawn from (0,0) after translate */
     const drawHeartShape = (ctx: CanvasRenderingContext2D, size: number) => {
       const s = size * 0.10;
       ctx.beginPath();
@@ -100,27 +105,52 @@ const PinkParticlesBackground = () => {
       ctx.closePath();
     };
 
-    const heart = (
+    /* Heart with Kanze photo clipped inside, glow drawn behind */
+    const heartImg = (
       cx: number, cy: number, size: number,
-      rot: number, hue: number, sat: number, lit: number,
-      alpha: number, glowR: number,
+      rot: number, alpha: number, glowR: number,
     ) => {
       const s = size * 0.10;
-      ctx.save();
-      ctx.translate(cx, cy - s * 5); // vertically centre the shape
-      ctx.rotate(rot);
+      const hw = s * 10;
+
+      /* 1 — soft pink glow behind the heart */
       if (glowR > 0) {
-        ctx.shadowColor = `hsl(${hue},${sat}%,${Math.min(95, lit + 18)}%)`;
+        ctx.save();
+        ctx.translate(cx, cy - s * 5);
+        ctx.rotate(rot);
+        ctx.globalAlpha = alpha * 0.35;
+        ctx.shadowColor = "hsl(340, 80%, 82%)";
         ctx.shadowBlur  = glowR;
+        ctx.fillStyle   = "hsl(340, 70%, 80%)";
+        drawHeartShape(ctx, size);
+        ctx.fill();
+        ctx.restore();
       }
+
+      /* 2 — photo clipped to heart path */
+      ctx.save();
+      ctx.translate(cx, cy - s * 5);
+      ctx.rotate(rot);
       ctx.globalAlpha = alpha;
-      ctx.fillStyle   = `hsl(${hue},${sat}%,${lit}%)`;
+
+      /* clip to heart */
       drawHeartShape(ctx, size);
-      ctx.fill();
+      ctx.clip();
+
+      const photo = imgRef.current;
+      if (photo && photo.complete && photo.naturalWidth > 0) {
+        /* Draw photo centred and covering the heart bounding box */
+        ctx.drawImage(photo, -hw / 2, 0, hw, hw);
+      } else {
+        /* Fallback solid fill while image loads */
+        ctx.fillStyle = "hsl(340, 65%, 75%)";
+        ctx.fill();
+      }
+
       ctx.restore();
     };
 
-    /* 4-pointed star (two overlapping diamonds, one rotated 45°) */
+    /* 4-pointed star */
     const star = (
       cx: number, cy: number, size: number,
       rot: number, hue: number, sat: number, lit: number, alpha: number,
@@ -152,7 +182,7 @@ const PinkParticlesBackground = () => {
       ctx.restore();
     };
 
-    /* Rose petal (thin ellipse) */
+    /* Rose petal */
     const petal = (
       cx: number, cy: number, size: number,
       rot: number, hue: number, sat: number, lit: number, alpha: number,
@@ -190,11 +220,9 @@ const PinkParticlesBackground = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       frame++;
 
-      /* Normal trickle spawn */
       if (particles.length < MAX_PARTICLES && Math.random() < 0.09)
         particles.push(spawnParticle());
 
-      /* Burst every BURST_EVERY frames */
       if (frame % BURST_EVERY === 0) {
         const bx = 60 + Math.random() * (canvas.width - 120);
         const n  = 6 + Math.floor(Math.random() * 5);
@@ -209,15 +237,13 @@ const PinkParticlesBackground = () => {
         p.life++;
         p.rot += p.rotSpeed;
 
-        /* Sinusoidal drift */
         p.x += p.vx + Math.sin(p.life * p.driftFreq + p.driftPhase) * p.driftAmp;
         p.y += p.vy;
 
-        /* Mouse soft repulsion */
         if (mx > 0) {
           const dx = p.x - mx, dy = p.y - my;
           const d2 = dx * dx + dy * dy;
-          if (d2 < 8100) { // 90 px radius
+          if (d2 < 8100) {
             const d = Math.sqrt(d2);
             const f = ((90 - d) / 90) * 0.9;
             p.x += (dx / d) * f;
@@ -225,7 +251,6 @@ const PinkParticlesBackground = () => {
           }
         }
 
-        /* Alpha envelope */
         const fadeIn  = Math.min(p.life / 45, 1);
         const fadeOut = Math.max(0, 1 - Math.max(0, p.life - p.maxLife + 65) / 65);
         const twinkle = p.type === "star"
@@ -233,19 +258,17 @@ const PinkParticlesBackground = () => {
           : 1.0;
         p.alpha = fadeIn * fadeOut * 0.78 * twinkle;
 
-        /* Cull */
         if (p.life > p.maxLife || p.y < -80) {
           particles.splice(i, 1);
           continue;
         }
 
-        /* Draw */
         switch (p.type) {
           case "heart":
-            heart(p.x, p.y, p.size, p.rot, p.hue, p.sat, p.lit, p.alpha, p.size * 1.0);
+            heartImg(p.x, p.y, p.size, p.rot, p.alpha, p.size * 1.0);
             break;
           case "bigHeart":
-            heart(p.x, p.y, p.size, p.rot * 0.35, p.hue, p.sat, p.lit, p.alpha * 0.88, p.size * 2.8);
+            heartImg(p.x, p.y, p.size, p.rot * 0.35, p.alpha * 0.88, p.size * 2.8);
             break;
           case "star":
             star(p.x, p.y, p.size, p.rot, p.hue, p.sat, p.lit, p.alpha);
