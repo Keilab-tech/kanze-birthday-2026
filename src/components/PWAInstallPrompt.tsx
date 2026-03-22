@@ -34,11 +34,13 @@ interface Props { children: React.ReactNode; }
 
 export default function PWAInstallGate({ children }: Props) {
   const [status, setStatus] = useState<InstallStatus>(() => {
+    /* In development, skip the gate so editing/previewing works normally */
+    if (import.meta.env.DEV) return "installed";
     if (isStandalone()) return "installed";
     if (localStorage.getItem(FLAG)) return "blocked";
     return "gate";
   });
-  const [splashDone, setSplashDone] = useState(false);
+  const [splashDone, setSplashDone] = useState(() => import.meta.env.DEV);
 
   /* If app gets installed externally or window regains focus as standalone */
   useEffect(() => {
