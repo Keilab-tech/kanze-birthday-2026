@@ -242,17 +242,24 @@ const GalleryPage = () => {
         )}
       </div>
 
-      {/* Hidden file input */}
-      <input ref={fileInputRef} type="file" accept="image/*,video/*" multiple className="hidden" onChange={handleFileChange} />
+      {/* File input — visually hidden but accessible, NOT display:none so mobile browsers can open it */}
+      <input
+        ref={fileInputRef}
+        id="gallery-upload"
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        className="sr-only"
+        onChange={handleFileChange}
+      />
 
-      {/* Floating Add button */}
-      <motion.button
+      {/* Floating Add button — label drives the input directly, no JS .click() needed */}
+      <motion.label
+        htmlFor={uploading ? undefined : "gallery-upload"}
         initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5, delay: 0.3 }}
         whileTap={{ scale: 0.93 }}
-        disabled={uploading}
-        onClick={() => fileInputRef.current?.click()}
-        className="fixed bottom-6 right-5 z-30 rounded-full w-14 h-14 flex items-center justify-center shadow-xl"
+        className="fixed bottom-6 right-5 z-30 rounded-full w-14 h-14 flex items-center justify-center shadow-xl cursor-pointer"
         style={{
           background: uploading ? "hsl(340, 40%, 75%)" : "linear-gradient(135deg, hsl(340, 70%, 68%), hsl(350, 65%, 62%))",
           color: "white",
@@ -264,7 +271,7 @@ const GalleryPage = () => {
           ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
           : <span className="text-2xl leading-none">+</span>
         }
-      </motion.button>
+      </motion.label>
 
       <div className="fixed bottom-[4.5rem] right-5 z-30 text-center" style={{ width: "3.5rem" }}>
         <span className="text-[9px] tracking-wide" style={{ color: "hsl(340, 50%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
