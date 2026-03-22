@@ -402,6 +402,29 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
       {/* Corner fireworks — visible before music starts, fade out on blow */}
       <CornerFireworks active={!["blown","fireworks","birthday-text","done"].includes(phase)} />
 
+      {/* Skip button */}
+      {["intro","candle","wish","waiting","listening","smoke-relight"].includes(phase) && (
+        <button
+          data-testid="button-skip-candle"
+          onClick={() => { playTrack(0, 35); onComplete(); }}
+          style={{
+            position: "fixed", bottom: 28, right: 22, zIndex: 30,
+            background: "rgba(255,255,255,0.08)",
+            border: "1px solid rgba(255,255,255,0.18)",
+            borderRadius: 20,
+            color: "rgba(255,255,255,0.55)",
+            fontFamily: "'Quicksand',sans-serif",
+            fontSize: 13,
+            letterSpacing: "0.08em",
+            padding: "7px 18px",
+            cursor: "pointer",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          Skip →
+        </button>
+      )}
+
       {/* ── All text – fixed top, clear of the cake ────────────────── */}
       <div className="fixed top-0 inset-x-0 z-20 flex flex-col items-center pt-16 pointer-events-none">
         <AnimatePresence>
