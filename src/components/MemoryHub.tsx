@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Home, Images, BookOpen, Mail, Flower2 } from "lucide-react";
+import { Home, Images, BookOpen, Mail } from "lucide-react";
 import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
@@ -33,15 +33,6 @@ const NAV_CARDS = [
     delay: 0.75,
     accent: "hsl(330, 68%, 65%)",
     glow: "hsl(330 58% 65% / 0.22)",
-  },
-  {
-    label: "Flowers",
-    sublabel: "Something secret",
-    icon: Flower2,
-    path: "/flowers",
-    delay: 0.85,
-    accent: "hsl(10, 65%, 68%)",
-    glow: "hsl(10 55% 68% / 0.22)",
   },
 ];
 
@@ -142,8 +133,9 @@ const MemoryHub = () => {
 
         {/* ── Nav Cards ── */}
         <div className="w-full max-w-sm px-5 grid grid-cols-2 gap-3">
-          {NAV_CARDS.map((card) => {
+          {NAV_CARDS.map((card, idx) => {
             const Icon = card.icon;
+            const isLastOdd = NAV_CARDS.length % 2 !== 0 && idx === NAV_CARDS.length - 1;
             return (
               <motion.button
                 key={card.path}
@@ -154,7 +146,7 @@ const MemoryHub = () => {
                 whileTap={{ scale: 0.96 }}
                 onClick={() => navigate(card.path)}
                 data-testid={`button-nav-${card.label.toLowerCase()}`}
-                className="relative flex flex-col items-start gap-2 rounded-2xl p-4 text-left overflow-hidden"
+                className={`relative flex flex-col items-start gap-2 rounded-2xl p-4 text-left overflow-hidden${isLastOdd ? " col-span-2 max-w-[50%] mx-auto w-full" : ""}`}
                 style={{
                   background: "hsl(0 0% 100% / 0.52)",
                   backdropFilter: "blur(16px)",
