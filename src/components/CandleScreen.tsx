@@ -361,7 +361,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   useEffect(() => {
     if (phase !== "blown") return;
     setFlameIntensity(0);
-    playTrack(2, 30); // "Who's Dat Girl" from 0:30 — starts immediately on blow-out
+    playTrack(2, 35); // "Who's Dat Girl" from 0:35 — starts immediately on blow-out
     const t = setTimeout(() => setPhase("fireworks"), 5000);
     return () => clearTimeout(t);
   }, [phase, playTrack]);
