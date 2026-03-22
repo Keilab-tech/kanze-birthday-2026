@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import FloatingHearts from "@/components/FloatingHearts";
 
 /* ═══════════════════════════════════════════════════════════════════ */
 /*  SVG path helpers                                                    */
@@ -475,6 +476,9 @@ export default function FlowersPage() {
 
       {/* Night sky canvas */}
       <canvas ref={starRef}  className="fixed inset-0 pointer-events-none" style={{ zIndex: 0 }} />
+
+      {/* Floating hearts — drift behind flowers */}
+      <FloatingHearts count={24} zIndex={5} />
 
       {/* Pollen canvas */}
       <canvas ref={pollenRef} className="fixed inset-0 pointer-events-none" style={{ zIndex: 15 }} />

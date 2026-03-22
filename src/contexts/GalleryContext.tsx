@@ -59,8 +59,20 @@ async function idbDelete(id: number): Promise<void> {
     const tx = db.transaction(STORE, "readwrite");
     tx.objectStore(STORE).delete(id);
     tx.oncomplete = () => resolve();
+    tx.onerror    = () => resolve(); /* always resolve so caller can proceed */
   });
 }
+
+/* ── Deleted-IDB tracking (double-lock so photos never reappear) ─── */
+const LS_DELETED_IDB = "kanze-gallery-deleted-idb";
+
+const getDeletedIdb = (): number[] => {
+  try { return JSON.parse(localStorage.getItem(LS_DELETED_IDB) ?? "[]"); } catch { return []; }
+};
+const addDeletedIdb = (id: number) => {
+  const list = getDeletedIdb();
+  if (!list.includes(id)) localStorage.setItem(LS_DELETED_IDB, JSON.stringify([...list, id]));
+};
 
 /* ── Hidden-static tracking in localStorage ─────────────── */
 const LS_HIDDEN = "kanze-gallery-hidden";
@@ -106,10 +118,11 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const hidden = getHidden();
-    const visible = STATIC_PHOTOS.filter((p) => !hidden.includes(p.id));
+    const hidden     = getHidden();
+    const deletedIdb = getDeletedIdb();
+    const visible    = STATIC_PHOTOS.filter((p) => !hidden.includes(p.id));
     idbLoadAll()
-      .then((idb) => setPhotos([...visible, ...idb]))
+      .then((idb) => setPhotos([...visible, ...idb.filter((p) => !deletedIdb.includes(p.id))]))
       .catch(() => setPhotos(visible))
       .finally(() => setLoading(false));
   }, []);
@@ -124,14 +137,19 @@ export function GalleryProvider({ children }: { children: React.ReactNode }) {
 
   const deletePhoto = useCallback(async (photo: GalleryPhoto) => {
     if (photo.idb) {
-      await idbDelete(photo.id).catch(() => {});
+      /* Mark as deleted in localStorage FIRST — photo won't reappear even if IDB fails */
+      addDeletedIdb(photo.id);
+      /* Remove from React state immediately */
+      setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+      /* Clean up memory + IDB in background */
       URL.revokeObjectURL(photo.url);
+      idbDelete(photo.id).catch(() => {});
     } else {
-      /* Static photo — persist hidden list */
+      /* Static photo — add to hidden list before removing from state */
       const h = getHidden();
       if (!h.includes(photo.id)) setHidden([...h, photo.id]);
+      setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
     }
-    setPhotos((prev) => prev.filter((p) => p.id !== photo.id));
   }, []);
 
   return (

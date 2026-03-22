@@ -57,8 +57,20 @@ async function idbDelete(id: number): Promise<void> {
     const tx = db.transaction(STORE, "readwrite");
     tx.objectStore(STORE).delete(id);
     tx.oncomplete = () => resolve();
+    tx.onerror    = () => resolve();
   });
 }
+
+/* ── Deleted-IDB double-lock ───────────────────────────── */
+const LS_DELETED_IDB = "kanze-moments-deleted-idb";
+
+const getDeletedIdb = (): number[] => {
+  try { return JSON.parse(localStorage.getItem(LS_DELETED_IDB) ?? "[]"); } catch { return []; }
+};
+const addDeletedIdb = (id: number) => {
+  const list = getDeletedIdb();
+  if (!list.includes(id)) localStorage.setItem(LS_DELETED_IDB, JSON.stringify([...list, id]));
+};
 
 /* ── Labels in localStorage ────────────────────────────── */
 const LS_LABELS  = "kanze-moment-labels";
@@ -105,14 +117,15 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
   const [labels,  setLabels]  = useState<Record<string, string>>({});
 
   useEffect(() => {
-    const hidden = getHidden();
-    const stored = getLabels();
+    const hidden     = getHidden();
+    const deletedIdb = getDeletedIdb();
+    const stored     = getLabels();
     if (!stored["-1"]) stored["-1"] = DEFAULT_LABEL;
     setLabels(stored);
     idbLoadAll()
       .then((idb) => {
         const base = hidden.includes(-1) ? [] : [STATIC_MOMENT];
-        setMoments([...base, ...idb]);
+        setMoments([...base, ...idb.filter((m) => !deletedIdb.includes(m.id))]);
       })
       .catch(() => {
         const base = hidden.includes(-1) ? [] : [STATIC_MOMENT];
@@ -131,13 +144,16 @@ export function MomentsProvider({ children }: { children: React.ReactNode }) {
 
   const deleteMoment = useCallback(async (moment: MomentPhoto) => {
     if (moment.idb) {
-      await idbDelete(moment.id).catch(() => {});
+      /* Mark deleted in localStorage FIRST — moment won't reappear even if IDB fails */
+      addDeletedIdb(moment.id);
+      setMoments((prev) => prev.filter((m) => m.id !== moment.id));
       URL.revokeObjectURL(moment.url);
+      idbDelete(moment.id).catch(() => {});
     } else {
       const h = getHidden();
       if (!h.includes(moment.id)) saveHidden([...h, moment.id]);
+      setMoments((prev) => prev.filter((m) => m.id !== moment.id));
     }
-    setMoments((prev) => prev.filter((m) => m.id !== moment.id));
   }, []);
 
   const setLabel = useCallback((id: number, text: string) => {
