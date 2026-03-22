@@ -236,7 +236,7 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   const animFrameRef = useRef<number>(0);
   const blowCooldownRef = useRef(false);
   const readyForNextBlowRef = useRef(true);
-  const { start: startMusic, playTrack } = useMusic();
+  const { playTrack } = useMusic();
 
   /* Processed cake src — offscreen canvas → data-URL → img */
   const cakeSrc = useProcessedCake("/images/cake-final.png");
@@ -361,15 +361,19 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
   useEffect(() => {
     if (phase !== "blown") return;
     setFlameIntensity(0);
-    playTrack(2); // "Who's Dat Girl" — starts immediately on blow-out
+    playTrack(2); // "Who's Dat Girl" — plays during smoke/transition
     const t = setTimeout(() => setPhase("fireworks"), 5000);
     return () => clearTimeout(t);
   }, [phase, playTrack]);
 
+  useEffect(() => {
+    if (phase !== "fireworks") return;
+    playTrack(0, 30); // Birthday Song from 30s — starts exactly when fireworks shoot
+  }, [phase, playTrack]);
+
   const handleFireworksComplete = useCallback(() => {
-    startMusic();
     setPhase("birthday-text");
-  }, [startMusic]);
+  }, []);
 
   useEffect(() => {
     if (phase !== "birthday-text") return;

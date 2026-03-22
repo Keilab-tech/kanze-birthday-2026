@@ -135,7 +135,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     setTimeout(() => fadeTo(0.7, 4000), 3000);
   }, [fadeTo, setupAnalyser]);
 
-  const playTrack = useCallback((index: number) => {
+  const playTrack = useCallback((index: number, startTime = 0) => {
     if (!audioRef.current) return;
     startedRef.current = true;
     setHasStarted(true);
@@ -143,10 +143,14 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     const clampedIndex = Math.max(0, Math.min(index, TRACKS.length - 1));
     setTrackIndex(clampedIndex);
     audioRef.current.src = TRACKS[clampedIndex].src;
-    audioRef.current.currentTime = 0;
     audioRef.current.volume = 0;
-    audioRef.current.play().catch(() => {});
-    fadeTo(0.75, 1500);
+    audioRef.current.load();
+    audioRef.current.addEventListener("canplay", function onCanPlay() {
+      audioRef.current!.removeEventListener("canplay", onCanPlay);
+      audioRef.current!.currentTime = startTime;
+      audioRef.current!.play().catch(() => {});
+    }, { once: true });
+    fadeTo(0.8, 1200);
   }, [fadeTo, setupAnalyser]);
 
   const fadeDown = useCallback(() => { fadeTo(0.08, 1500); }, [fadeTo]);
