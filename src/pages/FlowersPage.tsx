@@ -467,7 +467,7 @@ export default function FlowersPage() {
       {/* Back button */}
       <motion.button
         initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-        onClick={() => navigate("/letter")}
+        onClick={() => navigate("/hub")}
         data-testid="button-back-flowers"
         className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center"
         style={{ background: "rgba(255,255,255,0.07)", color: "rgba(255,255,255,0.5)" }}
