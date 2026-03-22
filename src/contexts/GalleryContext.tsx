@@ -73,11 +73,17 @@ const setHidden = (ids: number[]) =>
 
 /* ── Static photos ──────────────────────────────────────── */
 export const STATIC_PHOTOS: GalleryPhoto[] = [
-  { id: -1, name: "photo1.jpeg", url: "/images/gallery/photo1.jpeg", isVideo: false, idb: false },
-  { id: -2, name: "photo2.jpeg", url: "/images/gallery/photo2.jpeg", isVideo: false, idb: false },
-  { id: -3, name: "photo3.jpeg", url: "/images/gallery/photo3.jpeg", isVideo: false, idb: false },
-  { id: -4, name: "photo4.jpeg", url: "/images/gallery/photo4.jpeg", isVideo: false, idb: false },
-  { id: -5, name: "photo5.jpeg", url: "/images/gallery/photo5.jpeg", isVideo: false, idb: false },
+  { id: -1,  name: "photo1.jpeg",  url: "/images/gallery/photo1.jpeg",  isVideo: false, idb: false },
+  { id: -2,  name: "photo2.jpeg",  url: "/images/gallery/photo2.jpeg",  isVideo: false, idb: false },
+  { id: -3,  name: "photo3.jpeg",  url: "/images/gallery/photo3.jpeg",  isVideo: false, idb: false },
+  { id: -4,  name: "photo4.jpeg",  url: "/images/gallery/photo4.jpeg",  isVideo: false, idb: false },
+  { id: -5,  name: "photo5.jpeg",  url: "/images/gallery/photo5.jpeg",  isVideo: false, idb: false },
+  { id: -6,  name: "photo6.jpeg",  url: "/images/gallery/photo6.jpeg",  isVideo: false, idb: false },
+  { id: -7,  name: "photo7.jpeg",  url: "/images/gallery/photo7.jpeg",  isVideo: false, idb: false },
+  { id: -8,  name: "photo8.jpeg",  url: "/images/gallery/photo8.jpeg",  isVideo: false, idb: false },
+  { id: -9,  name: "photo9.jpeg",  url: "/images/gallery/photo9.jpeg",  isVideo: false, idb: false },
+  { id: -10, name: "photo10.jpeg", url: "/images/gallery/photo10.jpeg", isVideo: false, idb: false },
+  { id: -11, name: "photo11.jpeg", url: "/images/gallery/photo11.jpeg", isVideo: false, idb: false },
 ];
 
 /* ── Context ─────────────────────────────────────────────── */
