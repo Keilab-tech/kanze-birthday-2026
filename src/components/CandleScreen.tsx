@@ -435,8 +435,21 @@ const CandleScreen = ({ onComplete }: CandleScreenProps) => {
               transition={{ duration: 1.5 }}
               className="text-center px-8 space-y-4"
             >
-              <h1 className="text-5xl md:text-6xl" style={{ color: "hsl(340,80%,75%)" }}>
-                Happy Birthday Kanze 💖
+              <h1 className="text-5xl md:text-6xl flex items-center justify-center flex-wrap gap-3" style={{ color: "hsl(340,80%,75%)" }}>
+                <span>Happy Birthday Kanze</span>
+                <svg width="88" height="82" viewBox="0 0 100 92" style={{ display: "inline-block", verticalAlign: "middle", filter: "drop-shadow(0 4px 12px hsl(340 70% 60% / 0.5))" }}>
+                  <defs>
+                    <clipPath id="heartClip">
+                      <path d="M 50,32 C 50,22 41,11 28,11 C 15,11 4,23 4,37 C 4,55 28,72 50,86 C 72,72 96,55 96,37 C 96,23 85,11 72,11 C 59,11 50,22 50,32 Z" />
+                    </clipPath>
+                  </defs>
+                  <image
+                    href="/images/kanze-heart.jpeg"
+                    x="0" y="0" width="100" height="100"
+                    clipPath="url(#heartClip)"
+                    preserveAspectRatio="xMidYMid slice"
+                  />
+                </svg>
               </h1>
               <motion.p
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
