@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import SplashScreen from "./SplashScreen";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -37,6 +38,7 @@ export default function PWAInstallGate({ children }: Props) {
     if (localStorage.getItem(FLAG)) return "blocked";
     return "gate";
   });
+  const [splashDone, setSplashDone] = useState(false);
 
   /* If app gets installed externally or window regains focus as standalone */
   useEffect(() => {
@@ -76,8 +78,15 @@ export default function PWAInstallGate({ children }: Props) {
     window.location.href = window.location.origin + "/";
   };
 
-  /* Running as PWA — render app normally */
-  if (status === "installed") return <>{children}</>;
+  /* Running as PWA — show splash on top while app warms up underneath */
+  if (status === "installed") {
+    return (
+      <>
+        {children}
+        {!splashDone && <SplashScreen onDone={() => setSplashDone(true)} />}
+      </>
+    );
+  }
 
   /* ─── Shared background wrapper ─── */
   return (
