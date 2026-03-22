@@ -37,7 +37,7 @@ export default function SplashScreen({ onDone }: Props) {
   const [progress, setProgress] = useState(0);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef<number | null>(null);
-  const DURATION = 2800; // ms total
+  const DURATION = 5000; // ms total
 
   useEffect(() => {
     /* Animate progress bar */
