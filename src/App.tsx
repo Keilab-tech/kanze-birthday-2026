@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from
 import { AnimatePresence, motion } from "framer-motion";
 import { MusicProvider } from "@/contexts/MusicContext";
 import { GalleryProvider } from "@/contexts/GalleryContext";
+import { MomentsProvider } from "@/contexts/MomentsContext";
 
 import Index from "./pages/Index";
 import MemoryHub from "./components/MemoryHub";
@@ -82,13 +83,15 @@ const App = () => (
       <Sonner />
       <PWAInstallGate>
         <GalleryProvider>
-          <MusicProvider>
-            <BrowserRouter>
-              <RefreshGuard>
-                <AnimatedRoutes />
-              </RefreshGuard>
-            </BrowserRouter>
-          </MusicProvider>
+          <MomentsProvider>
+            <MusicProvider>
+              <BrowserRouter>
+                <RefreshGuard>
+                  <AnimatedRoutes />
+                </RefreshGuard>
+              </BrowserRouter>
+            </MusicProvider>
+          </MomentsProvider>
         </GalleryProvider>
       </PWAInstallGate>
     </TooltipProvider>

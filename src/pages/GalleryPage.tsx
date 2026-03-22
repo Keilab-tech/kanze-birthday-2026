@@ -1,14 +1,17 @@
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trash2 } from "lucide-react";
+import { Trash2, Camera } from "lucide-react";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
 import { useGallery, GalleryPhoto } from "@/contexts/GalleryContext";
+import { useMoments } from "@/contexts/MomentsContext";
 
 const GalleryPage = () => {
   const navigate = useNavigate();
   const { photos, loading, addPhotos, deletePhoto } = useGallery();
+  const { addMoments } = useMoments();
   const [uploading, setUploading]   = useState(false);
+  const [momentUploading, setMomentUploading] = useState(false);
   const [confirmId, setConfirmId]   = useState<number | null>(null);
   const [deleting, setDeleting]     = useState<number | null>(null);
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
@@ -22,6 +25,15 @@ const GalleryPage = () => {
     setUploading(true);
     await addPhotos(Array.from(picked));
     setUploading(false);
+    e.target.value = "";
+  };
+
+  const handleMomentUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.files;
+    if (!picked || picked.length === 0) return;
+    setMomentUploading(true);
+    await addMoments(Array.from(picked));
+    setMomentUploading(false);
     e.target.value = "";
   };
 
@@ -188,7 +200,7 @@ const GalleryPage = () => {
         )}
       </div>
 
-      {/* File input */}
+      {/* File inputs */}
       <input
         id="gallery-upload"
         type="file"
@@ -197,8 +209,16 @@ const GalleryPage = () => {
         className="sr-only"
         onChange={handleFileChange}
       />
+      <input
+        id="gallery-moment-upload"
+        type="file"
+        accept="image/*,video/*"
+        multiple
+        className="sr-only"
+        onChange={handleMomentUpload}
+      />
 
-      {/* Floating + button */}
+      {/* Floating + button (gallery) */}
       <motion.label
         htmlFor={uploading ? undefined : "gallery-upload"}
         initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
@@ -216,11 +236,36 @@ const GalleryPage = () => {
           ? <div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
           : <span className="text-2xl leading-none">+</span>}
       </motion.label>
-
       <div className="fixed bottom-[4.5rem] right-5 z-30 text-center" style={{ width: "3.5rem" }}>
         <span className="text-[9px] tracking-wide"
           style={{ color: "hsl(340, 50%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
           {uploading ? "Adding…" : "Add"}
+        </span>
+      </div>
+
+      {/* Floating camera button (add to Moments) */}
+      <motion.label
+        htmlFor={momentUploading ? undefined : "gallery-moment-upload"}
+        data-testid="button-add-to-moments"
+        initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.4 }}
+        whileTap={{ scale: 0.93 }}
+        className="fixed bottom-24 right-5 z-30 rounded-full w-12 h-12 flex items-center justify-center shadow-lg cursor-pointer"
+        style={{
+          background: momentUploading ? "hsl(260, 40%, 75%)" : "linear-gradient(135deg, hsl(270, 60%, 65%), hsl(300, 55%, 60%))",
+          color: "white",
+          boxShadow: "0 4px 16px hsl(270 60% 60% / 0.35)",
+          pointerEvents: momentUploading ? "none" : "auto",
+        }}
+      >
+        {momentUploading
+          ? <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+          : <Camera size={18} />}
+      </motion.label>
+      <div className="fixed z-30 text-center" style={{ bottom: "6.6rem", right: "1.25rem", width: "3rem" }}>
+        <span className="text-[9px] tracking-wide"
+          style={{ color: "hsl(270, 45%, 55%)", fontFamily: "'Quicksand', sans-serif" }}>
+          {momentUploading ? "Adding…" : "Moment"}
         </span>
       </div>
 
