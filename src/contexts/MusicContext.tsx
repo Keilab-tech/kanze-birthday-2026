@@ -3,10 +3,12 @@ import { createContext, useContext, useRef, useCallback, useEffect, useState } f
 const TRACKS = [
   { src: "/audio/background-song.mp3", title: "Birthday Song" },
   { src: "/audio/birkin-bag.mp3", title: "Birkin Bag" },
+  { src: "/audio/whos-dat-girl.mp3", title: "Who's Dat Girl" },
 ];
 
 interface MusicContextType {
   start: () => void;
+  playTrack: (index: number) => void;
   fadeDown: () => void;
   fadeUp: () => void;
   toggle: () => void;
@@ -23,6 +25,7 @@ interface MusicContextType {
 
 const MusicContext = createContext<MusicContextType>({
   start: () => {},
+  playTrack: () => {},
   fadeDown: () => {},
   fadeUp: () => {},
   toggle: () => {},
@@ -132,6 +135,20 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     setTimeout(() => fadeTo(0.7, 4000), 3000);
   }, [fadeTo, setupAnalyser]);
 
+  const playTrack = useCallback((index: number) => {
+    if (!audioRef.current) return;
+    startedRef.current = true;
+    setHasStarted(true);
+    setupAnalyser();
+    const clampedIndex = Math.max(0, Math.min(index, TRACKS.length - 1));
+    setTrackIndex(clampedIndex);
+    audioRef.current.src = TRACKS[clampedIndex].src;
+    audioRef.current.currentTime = 0;
+    audioRef.current.volume = 0;
+    audioRef.current.play().catch(() => {});
+    fadeTo(0.75, 1500);
+  }, [fadeTo, setupAnalyser]);
+
   const fadeDown = useCallback(() => { fadeTo(0.08, 1500); }, [fadeTo]);
   const fadeUp = useCallback(() => { fadeTo(0.7, 1200); }, [fadeTo]);
 
@@ -169,7 +186,7 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   return (
-    <MusicContext.Provider value={{ start, fadeDown, fadeUp, toggle, next, prev, seek, isPlaying, hasStarted, trackTitle: TRACKS[trackIndex].title, analyserNode, currentTime, duration }}>
+    <MusicContext.Provider value={{ start, playTrack, fadeDown, fadeUp, toggle, next, prev, seek, isPlaying, hasStarted, trackTitle: TRACKS[trackIndex].title, analyserNode, currentTime, duration }}>
       {children}
     </MusicContext.Provider>
   );
