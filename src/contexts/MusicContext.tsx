@@ -2,9 +2,9 @@ import { createContext, useContext, useRef, useCallback, useEffect, useState } f
 
 const TRACKS = [
   { src: "/audio/background-song.mp3", title: "Birthday Song" },
+  { src: "/audio/whos-dat-girl.mp3", title: "Who's Dat Girl" },
   { src: "/audio/seduce-me.mp3", title: "Seduce Me" },
   { src: "/audio/birkin-bag.mp3", title: "Birkin Bag" },
-  { src: "/audio/whos-dat-girl.mp3", title: "Who's Dat Girl" },
 ];
 
 interface MusicContextType {
