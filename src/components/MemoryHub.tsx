@@ -5,7 +5,6 @@ import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
 import PhotoSlider from "./PhotoSlider";
-import LetterMarquee from "./LetterMarquee";
 
 const NAV_CARDS = [
   {
@@ -90,9 +89,6 @@ const MemoryHub = () => {
             }}
           />
         </motion.div>
-
-        {/* ── Letter marquee ── */}
-        <LetterMarquee />
 
         {/* ── Greeting ── */}
         <motion.div
