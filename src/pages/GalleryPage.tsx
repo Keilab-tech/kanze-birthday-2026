@@ -10,6 +10,14 @@ interface MediaFile {
   isVideo: boolean;
 }
 
+const STATIC_GALLERY: MediaFile[] = [
+  { id: 1, name: "photo1.jpeg", url: "/images/gallery/photo1.jpeg", isVideo: false },
+  { id: 2, name: "photo2.jpeg", url: "/images/gallery/photo2.jpeg", isVideo: false },
+  { id: 3, name: "photo3.jpeg", url: "/images/gallery/photo3.jpeg", isVideo: false },
+  { id: 4, name: "photo4.jpeg", url: "/images/gallery/photo4.jpeg", isVideo: false },
+  { id: 5, name: "photo5.jpeg", url: "/images/gallery/photo5.jpeg", isVideo: false },
+];
+
 const GalleryPage = () => {
   const navigate = useNavigate();
   const [files, setFiles] = useState<MediaFile[]>([]);
@@ -21,8 +29,8 @@ const GalleryPage = () => {
   const loadGallery = () => {
     fetch("/api/media/gallery")
       .then((r) => r.json())
-      .then((data: MediaFile[]) => setFiles(data))
-      .catch(() => {})
+      .then((data: MediaFile[]) => setFiles(data.length ? data : STATIC_GALLERY))
+      .catch(() => setFiles(STATIC_GALLERY))
       .finally(() => setLoading(false));
   };
 
