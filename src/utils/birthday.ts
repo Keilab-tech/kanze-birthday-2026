@@ -15,6 +15,13 @@ export const BIRTH_YEAR     = 2005;
 const TEST_MODE             = false;
 const TEST_MINUTES_FROM_NOW = 2;
 
+/* ── REVIEW MODE ─────────────────────────────────────────────────
+   Set SKIP_LOCK = true to bypass the lockscreen entirely so the
+   app opens straight to the hub for review/testing.
+   Set back to false when done.
+──────────────────────────────────────────────────────────────── */
+const SKIP_LOCK = true;
+
 const TEST_BIRTHDAY_TARGET  = Date.now() + TEST_MINUTES_FROM_NOW * 60 * 1000;
 const TEST_BIRTHDAY_END     = TEST_BIRTHDAY_TARGET + 24 * 60 * 60 * 1000;
 
@@ -36,6 +43,7 @@ function thisYearBirthdayEnd(): Date {
 
 /** True while the birthday is still in the future (lockscreen phase). */
 export function isBirthdayAhead(): boolean {
+  if (SKIP_LOCK) return false;
   if (TEST_MODE) return Date.now() < TEST_BIRTHDAY_TARGET;
   return new Date() < thisYearBirthdayStart();
 }
