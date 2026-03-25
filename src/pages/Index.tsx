@@ -12,7 +12,7 @@ const Index = () => {
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
-      setDeferredPrompt(e as Event & { prompt: () => void });
+      setDeferredPrompt(e);
       if (!introStarted) setShowInstall(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
@@ -35,12 +35,15 @@ const Index = () => {
     navigate("/hub");
   }, [deferredPrompt, navigate]);
 
+  /* ── Auto-start after brief delay ── */
   useEffect(() => {
     if (!showInstall && !introStarted) {
       const t = setTimeout(() => {
         if (isBirthdayToday()) {
+          /* Birthday: launch candle intro as normal */
           setIntroStarted(true);
         } else {
+          /* Non-birthday: skip intro, go straight to hub */
           navigate("/hub", { replace: true });
         }
       }, 1200);
@@ -48,11 +51,12 @@ const Index = () => {
     }
   }, [showInstall, introStarted, navigate]);
 
+  /* Install screen */
   if (showInstall && !introStarted) {
     return (
       <div className="fixed inset-0 bg-candle-dark flex flex-col items-center justify-center px-8">
         <h1
-          className="text-3xl mb-8"
+          className="text-3xl mb-8 text-glow-pink"
           style={{ fontFamily: "'Dancing Script', cursive", color: "hsl(340, 80%, 75%)" }}
         >
           Kanze
@@ -80,10 +84,12 @@ const Index = () => {
     );
   }
 
+  /* Loading state — dark background while we decide where to go */
   if (!introStarted) {
     return <div className="fixed inset-0 bg-candle-dark" />;
   }
 
+  /* Birthday only: full candle intro */
   return <CandleScreen onComplete={handleIntroComplete} />;
 };
 

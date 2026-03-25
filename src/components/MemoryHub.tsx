@@ -63,7 +63,7 @@ const MemoryHub = () => {
         whileTap={{ scale: 0.9 }}
         onClick={() => navigate("/")}
         data-testid="button-home"
-        title="Back to home"
+        title="Back to cake"
         className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center"
         style={{
           background: "hsl(0 0% 100% / 0.65)",
