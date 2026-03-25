@@ -41,43 +41,81 @@ const loadStoredCycle = (): number => {
 };
 
 /* ═══════════════════════════════════════════════════════════════════
-   CALCULATION HELPERS
+   CALCULATION HELPERS  (spec-compliant algorithm)
 ═══════════════════════════════════════════════════════════════════ */
+
+/**
+ * Moving average of up to 6 most recent valid cycle lengths.
+ * Outlier bounds: 21–45 days (physiological spec).
+ */
 function computeAvgCycle(logs: PeriodLog[], fallback: number): number {
   const sorted = [...logs].sort((a, b) => b.startDate.localeCompare(a.startDate));
   const lengths: number[] = [];
-  for (let i = 0; i < sorted.length - 1 && lengths.length < 3; i++) {
+  for (let i = 0; i < sorted.length - 1 && lengths.length < 6; i++) {
     const diff = differenceInCalendarDays(
       parseISO(sorted[i].startDate), parseISO(sorted[i + 1].startDate)
     );
-    if (diff >= 15 && diff <= 65) lengths.push(diff);
+    if (diff >= 21 && diff <= 45) lengths.push(diff);
   }
   if (!lengths.length) return fallback;
   return Math.round(lengths.reduce((s, l) => s + l, 0) / lengths.length);
 }
 
-function getLoggedDays(logs: PeriodLog[]): Date[] {
+/**
+ * Average bleeding duration from up to 6 completed logs.
+ * Physiological bounds: 2–10 days. Default: 5 days.
+ */
+function computeAvgPeriodLength(logs: PeriodLog[], fallback = 5): number {
+  const completed = logs
+    .filter(l => l.endDate !== null)
+    .sort((a, b) => b.startDate.localeCompare(a.startDate))
+    .slice(0, 6);
+  const lengths: number[] = [];
+  for (const log of completed) {
+    const days = differenceInCalendarDays(parseISO(log.endDate!), parseISO(log.startDate)) + 1;
+    if (days >= 2 && days <= 10) lengths.push(days);
+  }
+  if (!lengths.length) return fallback;
+  return Math.round(lengths.reduce((s, l) => s + l, 0) / lengths.length);
+}
+
+/**
+ * Expand each logged entry into individual days.
+ * Ongoing (no endDate): capped at avgPeriodLength days from start.
+ */
+function getLoggedDays(logs: PeriodLog[], avgPeriodLength: number): Date[] {
   const days: Date[] = [];
   for (const log of logs) {
-    const start = parseISO(log.startDate);
-    const end   = log.endDate ? parseISO(log.endDate) : new Date();
-    const cap   = Math.min(differenceInCalendarDays(end, start), 9);
+    const start  = parseISO(log.startDate);
+    const endDay = log.endDate
+      ? parseISO(log.endDate)
+      : addDays(start, avgPeriodLength - 1);
+    const cap = Math.max(0, differenceInCalendarDays(endDay, start));
     for (let i = 0; i <= cap; i++) days.push(addDays(start, i));
   }
   return days;
 }
 
-function getPrediction(logs: PeriodLog[], avgCycle: number) {
+/**
+ * Full prediction from the most recent cycle start.
+ *
+ * Ovulation   = nextStart − 14  (luteal phase constant)
+ * Fertile     = ovulation − 5 … ovulation + 1  (spec: sperm 5d, egg 1d)
+ * Period end  = nextStart + avgPeriodLength − 1
+ */
+function getPrediction(logs: PeriodLog[], avgCycle: number, avgPeriodLength: number) {
   if (!logs.length) return null;
   const sorted      = [...logs].sort((a, b) => b.startDate.localeCompare(a.startDate));
   const latestStart = parseISO(sorted[0].startDate);
   const nextStart   = addDays(latestStart, avgCycle);
+  const nextEnd     = addDays(nextStart, avgPeriodLength - 1);
   const ovulation   = addDays(nextStart, -14);
   const fertileDays = eachDayOfInterval({
-    start: addDays(ovulation, -4), end: addDays(ovulation, 1),
+    start: addDays(ovulation, -5),   // spec: sperm survives 5 days
+    end:   addDays(ovulation,  1),   // spec: egg viable 1 day post-ovulation
   });
-  const predictedPeriodDays = Array.from({ length: 5 }, (_, i) => addDays(nextStart, i));
-  return { nextStart, ovulation, predictedPeriodDays, fertileDays };
+  const predictedPeriodDays = eachDayOfInterval({ start: nextStart, end: nextEnd });
+  return { nextStart, nextEnd, ovulation, predictedPeriodDays, fertileDays };
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -679,10 +717,10 @@ const CycleCalendar = ({
    SUMMARY ROW
 ═══════════════════════════════════════════════════════════════════ */
 const SummaryRow = ({
-  daysUntilNext, nextStart, ovulation, avgCycle,
+  daysUntilNext, nextStart, ovulation, avgCycle, avgPeriodLength,
 }: {
   daysUntilNext: number | null; nextStart: Date | null;
-  ovulation: Date | null; avgCycle: number;
+  ovulation: Date | null; avgCycle: number; avgPeriodLength: number;
 }) => {
   const cards = [
     {
@@ -700,7 +738,7 @@ const SummaryRow = ({
     {
       label: "Avg cycle",
       value: `${avgCycle}d`,
-      sub: "length",
+      sub: `~${avgPeriodLength}d period`,
       color: "hsl(215,60%,52%)", bg: "hsl(215,60%,97%)",
     },
   ];
@@ -811,9 +849,10 @@ const AppView = ({ onReset }: { onReset: () => void }) => {
     initialStart: format(new Date(), "yyyy-MM-dd"), initialEnd: null,
   });
 
-  const avgCycle   = useMemo(() => computeAvgCycle(logs, storedCycle), [logs, storedCycle]);
-  const loggedDays = useMemo(() => getLoggedDays(logs), [logs]);
-  const prediction = useMemo(() => getPrediction(logs, avgCycle), [logs, avgCycle]);
+  const avgCycle        = useMemo(() => computeAvgCycle(logs, storedCycle),       [logs, storedCycle]);
+  const avgPeriodLength = useMemo(() => computeAvgPeriodLength(logs),              [logs]);
+  const loggedDays      = useMemo(() => getLoggedDays(logs, avgPeriodLength),      [logs, avgPeriodLength]);
+  const prediction      = useMemo(() => getPrediction(logs, avgCycle, avgPeriodLength), [logs, avgCycle, avgPeriodLength]);
   const activeLog  = logs.find(l => l.endDate === null);
 
   const daysUntilNext = prediction
@@ -891,6 +930,7 @@ const AppView = ({ onReset }: { onReset: () => void }) => {
           nextStart={prediction?.nextStart ?? null}
           ovulation={prediction?.ovulation ?? null}
           avgCycle={avgCycle}
+          avgPeriodLength={avgPeriodLength}
         />
 
         {/* Active period banner */}

@@ -1,0 +1,27 @@
+Here is the exact logical workflow and algorithmic breakdown of a standard period tracking application.
+1. Initialization and Data Ingestion
+The algorithm requires a baseline to begin predictions.
+ * Cold Start (New User): If no historical data exists, the algorithm initializes with global biological averages: Cycle Length = 28 days, Period Length = 5 days, Luteal Phase = 14 days.
+ * Warm Start (Existing User): The algorithm fetches the array of historical logged dates: period_start_dates and period_end_dates.
+2. Data Sanitization
+Before calculating averages, the algorithm filters out extreme outliers to prevent a single irregular month from heavily skewing future predictions.
+ * Calculate Individual Cycle Lengths: cycle_length[i] = period_start_date[i] - period_start_date[i-1]
+ * Filter Outliers: Discard any cycle_length that falls outside standard physiological bounds (e.g., < 21 days or > 45 days) unless explicitly confirmed by the user.
+3. Baseline Calculation (Simple or Weighted Moving Average)
+Most algorithms use a moving average of the most recent 3 to 6 valid cycles.
+ * Average Cycle Length: Sum of the last N valid cycle lengths divided by N. (Some advanced algorithms use an Exponential Moving Average (EMA) to give more weight to the most recent cycles).
+ * Average Period Length: Sum of the last N valid period bleeding lengths divided by N.
+4. Forecasting the Menstrual Phase
+Using the most recent logged current_period_start_date and the calculated averages, the algorithm plots the next cycle.
+ * Predicted Next Period Start: current_period_start_date + Average Cycle Length
+ * Predicted Next Period End: Predicted Next Period Start + Average Period Length
+5. Forecasting Ovulation and Fertility
+This utilizes the Luteal Phase, which is the time between ovulation and the start of the next period. Unlike the follicular phase (which varies), the luteal phase is relatively static across human biology.
+ * Luteal Phase Constant: Set to 14 days (unless the user has logged historical basal body temperature/ovulation tests to establish a personal luteal baseline).
+ * Predicted Ovulation Date: Predicted Next Period Start - 14 days.
+ * Fertile Window Start: Predicted Ovulation Date - 5 days (accounting for sperm lifespan).
+ * Fertile Window End: Predicted Ovulation Date + 1 day (accounting for egg lifespan).
+6. Continuous Recalibration
+The algorithm operates on a feedback loop.
+ * If a user logs their actual period start date earlier or later than the Predicted Next Period Start, the algorithm immediately overwrites the prediction with the actual data.
+ * The newly completed cycle is appended to the historical array, the oldest cycle in the moving average window is dropped, and steps 2-5 are recalculated for the next month.
