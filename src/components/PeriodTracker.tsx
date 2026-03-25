@@ -16,7 +16,26 @@ import {
   addMonths,
   subMonths,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Settings, X, Droplets } from "lucide-react";
+import { ChevronLeft, ChevronRight, Settings, X, Heart } from "lucide-react";
+
+/* Heart-shaped photo avatar used as the tracker icon */
+const HeartPhoto = ({ src, size = 28 }: { src: string; size?: number }) => (
+  <div
+    style={{
+      width: size,
+      height: size,
+      flexShrink: 0,
+      clipPath: `path('M${size/2} ${size*0.88} C${size/2} ${size*0.88} ${size*0.09} ${size*0.59} ${size*0.09} ${size*0.32} C${size*0.09} ${size*0.17} ${size*0.21} ${size*0.07} ${size*0.35} ${size*0.07} C${size*0.42} ${size*0.07} ${size*0.46} ${size*0.12} ${size/2} ${size*0.2} C${size*0.54} ${size*0.12} ${size*0.58} ${size*0.07} ${size*0.65} ${size*0.07} C${size*0.79} ${size*0.07} ${size*0.91} ${size*0.17} ${size*0.91} ${size*0.32} C${size*0.91} ${size*0.59} ${size/2} ${size*0.88} ${size/2} ${size*0.88} Z')`,
+    }}
+  >
+    <img
+      src={src}
+      alt=""
+      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+      draggable={false}
+    />
+  </div>
+);
 
 /* ── Types ───────────────────────────────────────────────────────── */
 interface PeriodLog {
@@ -533,15 +552,7 @@ const PeriodTracker = () => {
       {/* Card header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div
-            className="w-7 h-7 rounded-xl flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg, hsl(340,75%,68%) 0%, hsl(350,70%,62%) 100%)",
-              boxShadow: "0 3px 10px hsl(340 60% 65% / 0.28)",
-            }}
-          >
-            <Droplets size={14} color="white" />
-          </div>
+          <HeartPhoto src="/images/gallery/photo1.jpeg" size={28} />
           <span
             className="text-sm font-semibold"
             style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
@@ -648,7 +659,7 @@ const PeriodTracker = () => {
                   }
             }
           >
-            <Droplets size={15} />
+            <Heart size={15} fill="currentColor" strokeWidth={0} />
             {isLogging ? "End Period Today" : "Log Period Today"}
           </button>
 
