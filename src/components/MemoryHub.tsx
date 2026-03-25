@@ -10,30 +10,33 @@ import PeriodTrackerSheet from "./PeriodTrackerSheet";
 const NAV_CARDS = [
   {
     label: "Gallery",
-    sublabel: "Our photos",
+    sublabel: "",
     icon: Images,
     path: "/gallery",
     delay: 0.55,
     accent: "hsl(340, 70%, 72%)",
     glow: "hsl(340 60% 70% / 0.22)",
+    emoji: "",
   },
   {
     label: "Moments",
-    sublabel: "Sweet memories",
+    sublabel: "",
     icon: BookOpen,
     path: "/moments",
     delay: 0.65,
     accent: "hsl(350, 65%, 68%)",
     glow: "hsl(350 55% 68% / 0.22)",
+    emoji: "",
   },
   {
-    label: "A Letter",
-    sublabel: "From the heart",
+    label: "",
+    sublabel: "",
     icon: Mail,
     path: "/letter",
     delay: 0.75,
     accent: "hsl(330, 68%, 65%)",
     glow: "hsl(330 58% 65% / 0.22)",
+    emoji: "💌",
   },
 ];
 
@@ -137,6 +140,7 @@ const MemoryHub = () => {
           {NAV_CARDS.map((card, idx) => {
             const Icon = card.icon;
             const isLastOdd = NAV_CARDS.length % 2 !== 0 && idx === NAV_CARDS.length - 1;
+            const isEmojiOnly = !!card.emoji;
             return (
               <motion.button
                 key={card.path}
@@ -146,8 +150,14 @@ const MemoryHub = () => {
                 whileHover={{ scale: 1.04, y: -2 }}
                 whileTap={{ scale: 0.96 }}
                 onClick={() => navigate(card.path)}
-                data-testid={`button-nav-${card.label.toLowerCase()}`}
-                className={`relative flex flex-col items-start gap-2 rounded-2xl p-4 text-left overflow-hidden${isLastOdd ? " col-span-2 max-w-[50%] mx-auto w-full" : ""}`}
+                data-testid={`button-nav-${card.label || "letter"}`}
+                className={`relative overflow-hidden rounded-2xl${
+                  isLastOdd ? " col-span-2 max-w-[50%] mx-auto w-full" : ""
+                }${
+                  isEmojiOnly
+                    ? " flex items-center justify-center p-5"
+                    : " flex flex-col items-start gap-2 p-4 text-left"
+                }`}
                 style={{
                   background: "hsl(0 0% 100% / 0.52)",
                   backdropFilter: "blur(16px)",
@@ -156,30 +166,31 @@ const MemoryHub = () => {
                   boxShadow: `0 4px 20px ${card.glow}, inset 0 1px 0 hsl(0 0% 100% / 0.9)`,
                 }}
               >
-                {/* icon bubble */}
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `linear-gradient(135deg, ${card.accent} 0%, ${card.accent.replace(")", ", 0.75)").replace("hsl", "hsla")} 100%)`,
-                    boxShadow: `0 3px 10px ${card.glow}`,
-                  }}
-                >
-                  <Icon size={17} color="white" strokeWidth={2} />
-                </div>
-                <div>
-                  <p
-                    className="text-sm font-semibold leading-tight"
-                    style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
-                  >
-                    {card.label}
-                  </p>
-                  <p
-                    className="text-[11px] leading-tight mt-0.5"
-                    style={{ color: "hsl(340, 30%, 55%)", fontFamily: "'Quicksand', sans-serif" }}
-                  >
-                    {card.sublabel}
-                  </p>
-                </div>
+                {isEmojiOnly ? (
+                  /* ── Letter: emoji only, centred ── */
+                  <span style={{ fontSize: 36, lineHeight: 1, userSelect: "none" }}>
+                    {card.emoji}
+                  </span>
+                ) : (
+                  /* ── Gallery / Moments: icon + label ── */
+                  <>
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{
+                        background: `linear-gradient(135deg, ${card.accent} 0%, ${card.accent.replace(")", ", 0.75)").replace("hsl", "hsla")} 100%)`,
+                        boxShadow: `0 3px 10px ${card.glow}`,
+                      }}
+                    >
+                      <Icon size={17} color="white" strokeWidth={2} />
+                    </div>
+                    <p
+                      className="text-sm font-semibold leading-tight"
+                      style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
+                    >
+                      {card.label}
+                    </p>
+                  </>
+                )}
                 {/* subtle shimmer corner */}
                 <div
                   className="absolute top-0 right-0 w-14 h-14 rounded-bl-full opacity-20 pointer-events-none"
