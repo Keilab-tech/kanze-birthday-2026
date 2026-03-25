@@ -37,17 +37,18 @@ export default function BirthdayLockscreen({ onUnlock }: Props) {
   const firedRef = useRef(false);
 
   const calcDiff = useCallback(() => {
+    // Once fired, freeze the display — stop all future updates
+    if (firedRef.current) return;
+
     const target = getNextBirthday().getTime();
     const diff = target - Date.now();
 
     if (diff <= 0) {
       setTime({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      if (!firedRef.current) {
-        firedRef.current = true;
-        setPhase("burst");
-        setTimeout(() => setPhase("gone"), 1400);
-        setTimeout(onUnlock, 1600);
-      }
+      firedRef.current = true;
+      setPhase("burst");
+      setTimeout(() => setPhase("gone"), 1400);
+      setTimeout(onUnlock, 1600);
       return;
     }
 
