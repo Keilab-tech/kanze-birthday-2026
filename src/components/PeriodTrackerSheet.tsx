@@ -36,7 +36,7 @@ const PeriodTrackerSheet = () => {
           }}
         >
           <img
-            src="/images/gallery/photo1.jpeg"
+            src="/images/kanze-cycles-logo.jpeg"
             alt=""
             style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
             draggable={false}

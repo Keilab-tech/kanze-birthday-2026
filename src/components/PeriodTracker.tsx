@@ -153,7 +153,7 @@ const WelcomeScreen = ({ onStart }: { onStart: () => void }) => (
         boxShadow: "0 8px 28px hsl(350 60% 60% / 0.22)",
       }}>
         <img
-          src="/images/gallery/photo1.jpeg"
+          src="/images/kanze-cycles-logo.jpeg"
           alt=""
           style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
           draggable={false}
