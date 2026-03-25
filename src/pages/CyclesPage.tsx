@@ -1,8 +1,53 @@
+import { Component } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 import PinkParticlesBackground from "@/components/PinkParticlesBackground";
 import PeriodTracker from "@/components/PeriodTracker";
+
+class TrackerErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { hasError: boolean; message: string }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, message: "" };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, message: error.message };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div
+          className="rounded-2xl p-6 text-center"
+          style={{ background: "hsl(0 0% 100% / 0.72)", border: "1px solid hsl(340, 35%, 90%)" }}
+        >
+          <p className="text-2xl mb-2">🌸</p>
+          <p className="text-sm font-semibold" style={{ color: "hsl(340, 40%, 40%)", fontFamily: "'Quicksand', sans-serif" }}>
+            Something went wrong loading the tracker.
+          </p>
+          <p className="text-xs mt-1" style={{ color: "hsl(340, 30%, 58%)", fontFamily: "'Quicksand', sans-serif" }}>
+            {this.state.message}
+          </p>
+          <button
+            onClick={() => {
+              ["kanze-period-setup-done", "kanze-period-logs", "kanze-cycle-length", "kanze-period-length"].forEach(
+                (k) => localStorage.removeItem(k)
+              );
+              this.setState({ hasError: false, message: "" });
+            }}
+            className="mt-4 px-4 py-2 rounded-full text-xs font-bold"
+            style={{ background: "hsl(340,70%,62%)", color: "white", fontFamily: "'Quicksand', sans-serif" }}
+          >
+            Reset &amp; Retry
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const CyclesPage = () => {
   const navigate = useNavigate();
@@ -102,7 +147,9 @@ const CyclesPage = () => {
           transition={{ duration: 0.7, delay: 0.35 }}
           className="w-full max-w-sm"
         >
-          <PeriodTracker />
+          <TrackerErrorBoundary>
+            <PeriodTracker />
+          </TrackerErrorBoundary>
         </motion.div>
       </div>
     </div>
