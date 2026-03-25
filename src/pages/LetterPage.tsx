@@ -1,9 +1,56 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import PinkParticlesBackground from "@/components/PinkParticlesBackground";
+import { motion, AnimatePresence } from "framer-motion";
 import { useMusic } from "@/contexts/MusicContext";
 
+/* ── Floating decorations – silver diamonds & soft petals ── */
+const FLOATERS = [
+  { id: 1,  x: 6,   y: 8,   size: 18, opacity: 0.28, delay: 0,    dur: 7,  shape: "diamond" },
+  { id: 2,  x: 88,  y: 14,  size: 12, opacity: 0.22, delay: 1.2,  dur: 9,  shape: "diamond" },
+  { id: 3,  x: 4,   y: 38,  size: 10, opacity: 0.18, delay: 2.5,  dur: 8,  shape: "diamond" },
+  { id: 4,  x: 92,  y: 42,  size: 22, opacity: 0.20, delay: 0.8,  dur: 11, shape: "diamond" },
+  { id: 5,  x: 14,  y: 62,  size: 14, opacity: 0.24, delay: 3,    dur: 7,  shape: "diamond" },
+  { id: 6,  x: 84,  y: 70,  size: 16, opacity: 0.18, delay: 1.8,  dur: 10, shape: "diamond" },
+  { id: 7,  x: 5,   y: 82,  size: 20, opacity: 0.22, delay: 2,    dur: 9,  shape: "diamond" },
+  { id: 8,  x: 90,  y: 88,  size: 11, opacity: 0.20, delay: 0.5,  dur: 8,  shape: "diamond" },
+  { id: 9,  x: 30,  y: 5,   size: 9,  opacity: 0.16, delay: 4,    dur: 12, shape: "diamond" },
+  { id: 10, x: 70,  y: 3,   size: 15, opacity: 0.20, delay: 1.5,  dur: 8,  shape: "diamond" },
+  { id: 11, x: 50,  y: 92,  size: 13, opacity: 0.18, delay: 3.5,  dur: 10, shape: "diamond" },
+  { id: 12, x: 22,  y: 75,  size: 8,  opacity: 0.15, delay: 5,    dur: 7,  shape: "heart"   },
+  { id: 13, x: 78,  y: 55,  size: 10, opacity: 0.18, delay: 2.2,  dur: 9,  shape: "heart"   },
+  { id: 14, x: 60,  y: 80,  size: 8,  opacity: 0.15, delay: 4.5,  dur: 8,  shape: "heart"   },
+];
+
+const FloatingDecoration = ({
+  x, y, size, opacity, delay, dur, shape,
+}: (typeof FLOATERS)[0]) => (
+  <motion.div
+    style={{
+      position: "fixed",
+      left: `${x}%`, top: `${y}%`,
+      width: size, height: size,
+      opacity, zIndex: 1,
+      pointerEvents: "none",
+    }}
+    animate={{ y: [0, -14, 0], rotate: shape === "diamond" ? [0, 8, -8, 0] : [0, 5, -5, 0] }}
+    transition={{ duration: dur, delay, repeat: Infinity, ease: "easeInOut" }}
+  >
+    {shape === "diamond" ? (
+      <svg viewBox="0 0 24 24" fill="none" style={{ width: "100%", height: "100%" }}>
+        <path d="M12 2L22 12L12 22L2 12Z" fill="hsl(240,8%,72%)" />
+      </svg>
+    ) : (
+      <svg viewBox="0 0 24 24" fill="none" style={{ width: "100%", height: "100%" }}>
+        <path
+          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+          fill="hsl(340,55%,78%)"
+        />
+      </svg>
+    )}
+  </motion.div>
+);
+
+/* ── Letter content ── */
 const letterLines = [
   "Dear Kanze...",
   "",
@@ -26,34 +73,15 @@ const letterLines = [
   "I'm grateful it gave me you.",
 ];
 
-const getParagraphs = () => {
-  const paragraphs: { startLine: number; endLine: number }[] = [];
-  let start = 0;
-  for (let i = 0; i <= letterLines.length; i++) {
-    if (i === letterLines.length || letterLines[i] === "") {
-      if (i > start) paragraphs.push({ startLine: start, endLine: i - 1 });
-      start = i + 1;
-    }
-  }
-  return paragraphs;
-};
-
-const paragraphs = getParagraphs();
-
-interface VoiceNote {
-  id: number;
-  name: string;
-  url: string;
-}
+/* Paragraph grouping for the decoration hearts */
+const HEART_AT_LINES = [6, 13, 18]; // lines after which a little heart appears
 
 const LetterPage = () => {
-  const navigate = useNavigate();
+  const navigate  = useNavigate();
   const [visibleChars, setVisibleChars] = useState(0);
-  const [voiceNotes, setVoiceNotes] = useState<VoiceNote[]>([]);
-  const [playingNote, setPlayingNote] = useState<string | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const typeAudioCtxRef = useRef<AudioContext | null>(null);
-  const [showStars, setShowStars] = useState(false);
+  const [showStars, setShowStars]   = useState(false);
+  const [showButton, setShowButton] = useState(false);
   const { fadeDown, fadeUp } = useMusic();
 
   useEffect(() => {
@@ -61,27 +89,8 @@ const LetterPage = () => {
     return () => { fadeUp(); };
   }, [fadeDown, fadeUp]);
 
-  useEffect(() => {
-    fetch("/api/media/voice-notes")
-      .then((r) => r.json())
-      .then((data: VoiceNote[]) => setVoiceNotes(data))
-      .catch(() => {});
-  }, []);
-
-  const fullText = letterLines.join("\n");
-  const totalChars = fullText.length;
-
-  const getCompletedParagraphs = () => {
-    const completed: number[] = [];
-    paragraphs.forEach((p, idx) => {
-      let endPos = 0;
-      for (let li = 0; li <= p.endLine; li++) {
-        endPos += letterLines[li].length + 1;
-      }
-      if (visibleChars >= endPos) completed.push(idx);
-    });
-    return completed;
-  };
+  const fullText    = letterLines.join("\n");
+  const totalChars  = fullText.length;
 
   const playKeyClick = useCallback(() => {
     try {
@@ -111,173 +120,240 @@ const LetterPage = () => {
 
   useEffect(() => {
     if (visibleChars >= totalChars) {
-      setTimeout(() => setShowStars(true), 1000);
+      setTimeout(() => setShowStars(true), 800);
+      setTimeout(() => setShowButton(true), 2200);
       return;
     }
     const currentChar = fullText[visibleChars];
-    const isNewline = currentChar === "\n";
-    const delay = isNewline ? 200 : 45 + Math.random() * 30;
+    const isNewline   = currentChar === "\n";
+    const delay       = isNewline ? 220 : 42 + Math.random() * 28;
     const t = setTimeout(() => {
       if (!isNewline && currentChar !== " ") playKeyClick();
-      setVisibleChars((v) => v + 1);
+      setVisibleChars(v => v + 1);
     }, delay);
     return () => clearTimeout(t);
   }, [visibleChars, totalChars, fullText, playKeyClick]);
 
-  const playVoiceNote = (note: VoiceNote) => {
-    if (audioRef.current) audioRef.current.pause();
-    if (playingNote === note.name) {
-      setPlayingNote(null);
-      return;
-    }
-    const audio = new Audio(note.url);
-    audio.play();
-    audio.onended = () => setPlayingNote(null);
-    audioRef.current = audio;
-    setPlayingNote(note.name);
-  };
-
-  const voiceNoteLines = [2, 5, 10, 14].filter((i) => i < voiceNotes.length + 2);
+  const visibleText      = fullText.slice(0, visibleChars);
+  const visibleLineTexts = visibleText.split("\n");
 
   return (
-    <div className="min-h-screen bg-princess-gradient relative overflow-hidden">
-      <PinkParticlesBackground />
+    <div
+      className="min-h-screen relative"
+      style={{
+        background: "linear-gradient(160deg, hsl(345,75%,92%) 0%, hsl(350,65%,90%) 30%, hsl(340,55%,93%) 65%, hsl(30,60%,93%) 100%)",
+        overflowX: "hidden",
+        overflowY: "auto",
+      }}
+    >
+      {/* Floating decorations */}
+      {FLOATERS.map(f => <FloatingDecoration key={f.id} {...f} />)}
 
-      <div className="relative z-10 p-6 pb-20 max-w-lg mx-auto">
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          onClick={() => {
-            if (audioRef.current) audioRef.current.pause();
-            navigate("/hub");
-          }}
-          className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center shadow-sm"
-          style={{ background: "hsl(340, 60%, 92%)", color: "hsl(340, 40%, 35%)" }}
-        >
-          ←
-        </motion.button>
-
-        <div className="mt-16 space-y-1">
-          {(() => {
-            const visibleText = fullText.slice(0, visibleChars);
-            const visibleLineTexts = visibleText.split("\n");
-            return visibleLineTexts.map((lineText, i) => {
-              const isTitle = i === 0;
-              const voiceNoteIndex = voiceNoteLines.indexOf(i);
-              const hasVoiceNote = voiceNoteIndex !== -1 && voiceNoteIndex < voiceNotes.length;
-              const lineComplete = i < visibleLineTexts.length - 1;
-
-              if (letterLines[i] === "" && lineComplete) return <div key={i} className="h-5" />;
-              if (lineText === "" && !lineComplete) return null;
-
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.4 }}
-                  className="flex items-start gap-2"
-                >
-                  <p
-                    className={isTitle ? "text-2xl text-primary mb-4" : "text-base leading-[1.9] text-foreground/90"}
-                    style={{ fontFamily: isTitle ? "'Dancing Script', cursive" : "'Quicksand', sans-serif" }}
-                  >
-                    {lineText}
-                    {!lineComplete && (
-                      <span
-                        className="inline-block w-0.5 h-5 ml-0.5 align-middle"
-                        style={{ backgroundColor: "hsl(340, 80%, 65%)", animation: "blink 0.8s step-end infinite" }}
-                      />
-                    )}
-                  </p>
-                  {hasVoiceNote && lineComplete && (
-                    <button
-                      onClick={() => playVoiceNote(voiceNotes[voiceNoteIndex])}
-                      className="flex-shrink-0 mt-1 w-5 h-5 rounded-full flex items-center justify-center transition-transform hover:scale-125"
-                      style={{
-                        background:
-                          playingNote === voiceNotes[voiceNoteIndex].name
-                            ? "hsl(340, 80%, 65%)"
-                            : "hsl(340, 60%, 80%)",
-                      }}
-                    >
-                      <span className="text-white text-[8px]">
-                        {playingNote === voiceNotes[voiceNoteIndex].name ? "■" : "▶"}
-                      </span>
-                    </button>
-                  )}
-                </motion.div>
-              );
-            });
-          })()}
-        </div>
-
+      {/* "Kanze" ghost watermark */}
+      <AnimatePresence>
         {showStars && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 1.5 }}
-            className="mt-6 flex justify-center gap-3"
-          >
-            {["✨", "⭐", "✨"].map((star, i) => (
-              <motion.span
-                key={i}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: [0, 1, 0.6], scale: [0, 1.2, 1] }}
-                transition={{ duration: 1.2, delay: i * 0.3 }}
-                className="text-lg"
-              >
-                {star}
-              </motion.span>
-            ))}
-          </motion.div>
-        )}
-
-        {showStars && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 0.08 }}
+            animate={{ opacity: 0.07 }}
             transition={{ duration: 3 }}
             className="fixed inset-0 flex items-center justify-center pointer-events-none z-0"
           >
             <span
-              className="text-[120px] md:text-[180px]"
-              style={{ fontFamily: "'Dancing Script', cursive", color: "hsl(340, 80%, 75%)" }}
+              style={{
+                fontFamily: "'Dancing Script', cursive",
+                fontSize: "clamp(90px,22vw,180px)",
+                color: "hsl(340, 80%, 60%)",
+                userSelect: "none",
+              }}
             >
               Kanze
             </span>
           </motion.div>
         )}
+      </AnimatePresence>
 
-        {showStars && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 1.2 }}
-            className="mt-10 mb-6 flex justify-center"
-          >
-            <button
-              data-testid="button-one-more-thing"
-              onClick={() => navigate("/flowers")}
-              className="group relative px-6 py-3 rounded-full text-sm transition-all duration-300"
-              style={{
-                background: "hsl(340, 80%, 65%)",
-                color: "white",
-                fontFamily: "'Dancing Script', cursive",
-                fontSize: "1.1rem",
-                boxShadow: "0 4px 20px hsla(340, 80%, 65%, 0.4)",
-              }}
+      {/* Back button */}
+      <motion.button
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4 }}
+        onClick={() => navigate("/hub")}
+        className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center"
+        style={{
+          background: "hsl(0 0% 100% / 0.6)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          boxShadow: "0 2px 12px hsl(340 50% 70% / 0.22)",
+          border: "1px solid hsl(340,45%,85%)",
+          color: "hsl(340, 60%, 50%)",
+          fontSize: 18,
+        }}
+        data-testid="button-letter-back"
+      >
+        ←
+      </motion.button>
+
+      {/* ── Letter card ── */}
+      <div
+        className="relative z-10 mx-auto px-7 pt-20 pb-28"
+        style={{ maxWidth: 540 }}
+      >
+        {visibleLineTexts.map((lineText, i) => {
+          const isTitle    = i === 0;
+          const isCursor   = i === visibleLineTexts.length - 1;
+          const isBlankLine = letterLines[i] === "";
+
+          /* blank gap line */
+          if (isBlankLine && !isCursor) {
+            const afterLine = i - 1;
+            const showHeart = HEART_AT_LINES.includes(afterLine);
+            return (
+              <div key={i} style={{ height: showHeart ? 0 : 0 }}>
+                {showHeart && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.5 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.6, type: "spring" }}
+                    style={{ textAlign: "left", marginTop: 6, marginBottom: 2, fontSize: 13 }}
+                  >
+                    💗
+                  </motion.div>
+                )}
+                <div style={{ height: 22 }} />
+              </div>
+            );
+          }
+          if (lineText === "" && isCursor) return null;
+
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
             >
-              <span className="relative z-10">Oh, one more last thing — click here 🌸</span>
-              <span
-                className="absolute inset-0 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ background: "hsl(340, 80%, 58%)" }}
-              />
-            </button>
-          </motion.div>
-        )}
+              {isTitle ? (
+                <p
+                  style={{
+                    fontFamily: "'Dancing Script', cursive",
+                    fontSize: "clamp(1.7rem,5vw,2.1rem)",
+                    fontWeight: 700,
+                    color: "hsl(340, 62%, 52%)",
+                    marginBottom: "1.4rem",
+                    fontStyle: "italic",
+                    letterSpacing: "0.01em",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {lineText}
+                  {isCursor && (
+                    <span
+                      style={{
+                        display: "inline-block", width: 2, height: "0.9em",
+                        marginLeft: 2, verticalAlign: "middle",
+                        background: "hsl(340, 80%, 65%)",
+                        animation: "blink 0.8s step-end infinite",
+                      }}
+                    />
+                  )}
+                </p>
+              ) : (
+                <p
+                  style={{
+                    fontFamily: "'Quicksand', sans-serif",
+                    fontSize: "clamp(0.9rem,2.5vw,1.02rem)",
+                    color: "hsl(340, 25%, 28%)",
+                    lineHeight: 1.95,
+                    margin: 0,
+                    fontWeight: 500,
+                  }}
+                >
+                  {lineText}
+                  {isCursor && (
+                    <span
+                      style={{
+                        display: "inline-block", width: 2, height: "0.95em",
+                        marginLeft: 2, verticalAlign: "middle",
+                        background: "hsl(340, 80%, 65%)",
+                        animation: "blink 0.8s step-end infinite",
+                      }}
+                    />
+                  )}
+                </p>
+              )}
+            </motion.div>
+          );
+        })}
+
+        {/* ── Stars after letter finishes ── */}
+        <AnimatePresence>
+          {showStars && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1.2 }}
+              style={{ marginTop: 28, display: "flex", justifyContent: "center", gap: 10 }}
+            >
+              {["✨", "⭐", "✨"].map((s, i) => (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: [0, 1, 0.7], scale: [0, 1.3, 1] }}
+                  transition={{ duration: 1.1, delay: i * 0.3 }}
+                  style={{ fontSize: 22 }}
+                >
+                  {s}
+                </motion.span>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* ── "One more thing" CTA ── */}
+        <AnimatePresence>
+          {showButton && (
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.8, type: "spring", stiffness: 160 }}
+              style={{ marginTop: 36, display: "flex", justifyContent: "center" }}
+            >
+              <motion.button
+                data-testid="button-one-more-thing"
+                onClick={() => navigate("/flowers")}
+                whileHover={{ scale: 1.06 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  padding: "14px 30px",
+                  borderRadius: 999,
+                  border: "none",
+                  background: "linear-gradient(135deg, hsl(340,80%,60%) 0%, hsl(350,75%,55%) 100%)",
+                  color: "#fff",
+                  fontFamily: "'Dancing Script', cursive",
+                  fontSize: "1.18rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.01em",
+                  cursor: "pointer",
+                  boxShadow: "0 6px 28px hsl(340 80% 60% / 0.42), 0 1px 0 hsl(0 0% 100% / 0.2) inset",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                }}
+              >
+                <span>Oh, one more last thing — click here</span>
+                <span style={{ fontSize: "1rem" }}>🌸</span>
+              </motion.button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <style>{`
+        @keyframes blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+      `}</style>
     </div>
   );
 };
