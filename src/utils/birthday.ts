@@ -1,10 +1,10 @@
 /* ── Birthday detection utility ─────────────────────────────────
-   Kanze's birthday: March 21 (month index 2).
-   Born: 2005  →  turning 21 in 2026, 22 in 2027, etc.
+   Kanze's birthday: March 29 (month index 2).
+   Born: 29 March 2005  →  turning 21 in 2026, 22 in 2027, etc.
 ──────────────────────────────────────────────────────────────── */
 
 export const BIRTHDAY_MONTH = 2;   // March (0-indexed)
-export const BIRTHDAY_DAY   = 21;
+export const BIRTHDAY_DAY   = 29;
 export const BIRTH_YEAR     = 2005;
 
 /** True only on March 21 (any year), for a full 24-hour window. */
