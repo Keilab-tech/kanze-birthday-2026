@@ -10,30 +10,33 @@ import PeriodTrackerSheet from "./PeriodTrackerSheet";
 const NAV_CARDS = [
   {
     label: "Gallery",
-    sublabel: "Our photos",
+    sublabel: "My photos",
     icon: Images,
     path: "/gallery",
     delay: 0.55,
     accent: "hsl(340, 70%, 72%)",
     glow: "hsl(340 60% 70% / 0.22)",
+    hideText: false,
   },
   {
     label: "Moments",
-    sublabel: "Sweet memories",
+    sublabel: "Moments",
     icon: BookOpen,
     path: "/moments",
     delay: 0.65,
     accent: "hsl(350, 65%, 68%)",
     glow: "hsl(350 55% 68% / 0.22)",
+    hideText: false,
   },
   {
     label: "A Letter",
-    sublabel: "From the heart",
+    sublabel: "",
     icon: Mail,
     path: "/letter",
     delay: 0.75,
     accent: "hsl(330, 68%, 65%)",
     glow: "hsl(330 58% 65% / 0.22)",
+    hideText: true,
   },
 ];
 
@@ -166,20 +169,24 @@ const MemoryHub = () => {
                 >
                   <Icon size={17} color="white" strokeWidth={2} />
                 </div>
-                <div>
-                  <p
-                    className="text-sm font-semibold leading-tight"
-                    style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
-                  >
-                    {card.label}
-                  </p>
-                  <p
-                    className="text-[11px] leading-tight mt-0.5"
-                    style={{ color: "hsl(340, 30%, 55%)", fontFamily: "'Quicksand', sans-serif" }}
-                  >
-                    {card.sublabel}
-                  </p>
-                </div>
+                {!card.hideText && (
+                  <div>
+                    <p
+                      className="text-sm font-semibold leading-tight"
+                      style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
+                    >
+                      {card.label}
+                    </p>
+                    {card.sublabel && (
+                      <p
+                        className="text-[11px] leading-tight mt-0.5"
+                        style={{ color: "hsl(340, 30%, 55%)", fontFamily: "'Quicksand', sans-serif" }}
+                      >
+                        {card.sublabel}
+                      </p>
+                    )}
+                  </div>
+                )}
                 {/* subtle shimmer corner */}
                 <div
                   className="absolute top-0 right-0 w-14 h-14 rounded-bl-full opacity-20 pointer-events-none"

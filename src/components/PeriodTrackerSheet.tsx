@@ -3,46 +3,73 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import PeriodTracker from "./PeriodTracker";
 
-/* Hidden floating trigger + full slide-up sheet.
-   The edge button is deliberately minimal — nothing about its purpose is obvious. */
-
 const PeriodTrackerSheet = () => {
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      {/* ── Floating trigger — flush with right edge, half-pill ── */}
-      <motion.button
-        data-testid="button-period-tracker-open"
-        onClick={() => setOpen(true)}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: 2.2, duration: 0.5, type: "spring", stiffness: 200 }}
-        whileTap={{ scale: 0.88 }}
-        title=" "
+      {/* ── Floating trigger — round, just below the home button ── */}
+      <motion.div
+        initial={{ opacity: 0, scale: 0.6 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.55, duration: 0.4, type: "spring", stiffness: 200 }}
         style={{
           position: "fixed",
-          bottom: 72,
-          right: 0,
-          zIndex: 40,
-          width: 36,
-          height: 36,
-          borderRadius: "50% 0 0 50%",
-          background: "hsl(350 62% 50% / 0.85)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
-          border: "1px solid hsl(350 50% 60% / 0.4)",
-          borderRight: "none",
-          boxShadow: "-3px 2px 16px hsl(350 60% 45% / 0.22)",
+          top: 72,        /* home button is top-4 (16px) + h-11 (44px) + 12px gap */
+          left: 16,
+          zIndex: 30,
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          cursor: "pointer",
-          paddingRight: 2,
+          gap: 4,
         }}
       >
-        <span style={{ fontSize: 14, lineHeight: 1, userSelect: "none" }}>🩸</span>
-      </motion.button>
+        {/* photo circle button */}
+        <motion.button
+          data-testid="button-period-tracker-open"
+          onClick={() => setOpen(true)}
+          whileTap={{ scale: 0.88 }}
+          whileHover={{ scale: 1.08 }}
+          title=" "
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: "50%",
+            border: "2.5px solid hsl(0 0% 100% / 0.85)",
+            boxShadow: "0 2px 16px hsl(340 50% 65% / 0.28), inset 0 1px 0 hsl(0 0% 100% / 0.6)",
+            overflow: "hidden",
+            cursor: "pointer",
+            padding: 0,
+            background: "none",
+            display: "block",
+            flexShrink: 0,
+          }}
+        >
+          <img
+            src="/images/gallery/photo1.jpeg"
+            alt=""
+            style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+            draggable={false}
+          />
+        </motion.button>
+
+        {/* label */}
+        <span
+          style={{
+            fontSize: 9,
+            fontWeight: 700,
+            fontFamily: "'Quicksand', sans-serif",
+            color: "hsl(340, 55%, 45%)",
+            letterSpacing: "0.04em",
+            textAlign: "center",
+            lineHeight: 1.2,
+            textShadow: "0 1px 4px hsl(0 0% 100% / 0.8)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          Kanze Cycles
+        </span>
+      </motion.div>
 
       {/* ── Backdrop ── */}
       <AnimatePresence>
@@ -95,9 +122,24 @@ const PeriodTrackerSheet = () => {
                 background: "hsl(240,10%,88%)",
               }} />
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 8 }}>
-                <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Quicksand', sans-serif", color: "hsl(240,12%,22%)" }}>
-                  Cycle
-                </span>
+                {/* mini photo + title */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: "50%",
+                    overflow: "hidden", flexShrink: 0,
+                    border: "2px solid hsl(340,60%,85%)",
+                  }}>
+                    <img
+                      src="/images/gallery/photo1.jpeg"
+                      alt=""
+                      style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      draggable={false}
+                    />
+                  </div>
+                  <span style={{ fontSize: 15, fontWeight: 700, fontFamily: "'Quicksand', sans-serif", color: "hsl(240,12%,22%)" }}>
+                    Kanze Cycles
+                  </span>
+                </div>
                 <button
                   data-testid="button-period-sheet-close"
                   onClick={() => setOpen(false)}
