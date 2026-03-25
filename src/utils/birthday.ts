@@ -86,7 +86,7 @@ export function getNextBirthday(): Date {
 
 /** Age Kanze will turn at the next birthday. */
 export function getNextBirthdayAge(): number {
-  if (TEST_MODE) return 21;
+  if (TEST_MODE) return 22; // birthday is NOW → next birthday is 22nd; display shows nextAge-1 = 21st
   return getNextBirthday().getFullYear() - BIRTH_YEAR;
 }
 
