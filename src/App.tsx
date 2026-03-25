@@ -15,6 +15,7 @@ import GalleryPage from "./pages/GalleryPage";
 import MomentsPage from "./pages/MomentsPage";
 import LetterPage from "./pages/LetterPage";
 import FlowersPage from "./pages/FlowersPage";
+import CyclesPage from "./pages/CyclesPage";
 import PWAInstallGate from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
@@ -69,6 +70,7 @@ const AnimatedRoutes = () => {
           <Route path="/moments" element={<MomentsPage />} />
           <Route path="/letter" element={<LetterPage />} />
           <Route path="/flowers" element={<FlowersPage />} />
+          <Route path="/cycles" element={<CyclesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>

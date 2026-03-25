@@ -134,7 +134,7 @@ function Onboarding({ onSave }: { onSave: () => void }) {
           className="text-sm leading-relaxed"
           style={{ color: "hsl(340, 25%, 45%)", fontFamily: "'Quicksand', sans-serif" }}
         >
-          Tell me a bit so I can predict your next period ✨
+          Hey Kanze, tell me a bit more so I can predict your next period ✨
         </p>
       </div>
 
@@ -557,7 +557,7 @@ const PeriodTracker = () => {
             className="text-sm font-semibold"
             style={{ color: "hsl(340, 40%, 30%)", fontFamily: "'Quicksand', sans-serif" }}
           >
-            Period Tracker
+            Kanze Cycles
           </span>
         </div>
         {setupDone && !showSettings && (
