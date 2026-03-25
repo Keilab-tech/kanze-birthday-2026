@@ -71,9 +71,14 @@ export function isBirthdayOver(): boolean {
  */
 export function getNextBirthday(): Date {
   if (TEST_MODE) {
-    return Date.now() < TEST_BIRTHDAY_TARGET
-      ? new Date(TEST_BIRTHDAY_TARGET)
-      : new Date(TEST_BIRTHDAY_END);
+    if (Date.now() < TEST_BIRTHDAY_TARGET) {
+      // Still counting down to birthday
+      return new Date(TEST_BIRTHDAY_TARGET);
+    }
+    // Birthday is happening now or just passed — next birthday is 1 year from the target
+    const next = new Date(TEST_BIRTHDAY_TARGET);
+    next.setFullYear(next.getFullYear() + 1);
+    return next;
   }
   if (isBirthdayAhead()) return thisYearBirthdayStart();
   return new Date(
