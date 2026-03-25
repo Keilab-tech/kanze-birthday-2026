@@ -12,7 +12,7 @@ export const BIRTH_YEAR     = 2005;
    TEST_MINUTES_FROM_NOW minutes.
    Flip back to false before deploying.
 ──────────────────────────────────────────────────────────────── */
-const TEST_MODE             = true;
+const TEST_MODE             = false;
 const TEST_MINUTES_FROM_NOW = 5;
 
 // Fixed timestamp computed once when the module loads
