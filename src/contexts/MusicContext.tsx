@@ -159,6 +159,8 @@ export const MusicProvider = ({ children }: { children: React.ReactNode }) => {
     if (!audioRef.current) return;
     setupAnalyser();
     if (audioRef.current.paused) {
+      startedRef.current = true;
+      setHasStarted(true);
       audioRef.current.play().catch(() => {});
       fadeTo(0.7, 800);
     } else {

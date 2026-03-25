@@ -84,7 +84,7 @@ const MusicPlayerBar = () => {
 
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
   const location = useLocation();
-  const showPlayer = hasStarted && location.pathname === "/hub";
+  const showPlayer = location.pathname === "/hub";
 
   return (
     <AnimatePresence>
