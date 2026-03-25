@@ -36,7 +36,7 @@ const PeriodTrackerSheet = () => {
       }}
     >
       <img
-        src="/images/gallery/photo1.jpeg"
+        src="/images/cat-logo.jpeg"
         alt=""
         draggable={false}
         style={{

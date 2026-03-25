@@ -41,7 +41,29 @@ const CyclesPage = () => {
       </motion.button>
 
       <div className="relative z-10 flex flex-col items-center pt-20 pb-16 px-5">
-        {/* Page title */}
+        {/* Round cat logo */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.5 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.55, delay: 0.18, type: "spring", stiffness: 220, damping: 16 }}
+          className="mb-4"
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: "50%",
+            overflow: "hidden",
+            border: "3px solid hsl(340, 65%, 80%)",
+            boxShadow: "0 4px 20px hsl(340 60% 65% / 0.35), inset 0 1px 0 hsl(0 0% 100% / 0.6)",
+          }}
+        >
+          <img
+            src="/images/cat-logo.jpeg"
+            alt="Kanze Cycles"
+            draggable={false}
+            style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center top", display: "block" }}
+          />
+        </motion.div>
+
         <motion.div
           initial={{ opacity: 0, y: 14 }}
           animate={{ opacity: 1, y: 0 }}
