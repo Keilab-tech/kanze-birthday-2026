@@ -5,7 +5,7 @@ import PinkParticlesBackground from "./PinkParticlesBackground";
 import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
 import PhotoSlider from "./PhotoSlider";
-import PeriodTracker from "./PeriodTracker";
+import PeriodTrackerSheet from "./PeriodTrackerSheet";
 
 const NAV_CARDS = [
   {
@@ -219,26 +219,11 @@ const MemoryHub = () => {
           <BirthdayCountdown />
         </motion.div>
 
-        {/* ── Divider ── */}
-        <motion.div
-          initial={{ opacity: 0, scaleX: 0.5 }}
-          animate={{ opacity: 1, scaleX: 1 }}
-          transition={{ delay: 1.3, duration: 0.6 }}
-          className="w-24 h-px mt-8 mb-6 rounded-full"
-          style={{ background: "linear-gradient(90deg, transparent, hsl(340,60%,75%), transparent)" }}
-        />
-
-        {/* ── Period Tracker ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: 1.4 }}
-          className="w-full max-w-sm px-5"
-        >
-          <PeriodTracker />
-        </motion.div>
 
       </div>
+
+      {/* ── Hidden period tracker — opened via floating edge button ── */}
+      <PeriodTrackerSheet />
     </div>
   );
 };
