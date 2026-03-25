@@ -6,6 +6,9 @@ import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
 import PhotoSlider from "./PhotoSlider";
 import PeriodTrackerSheet from "./PeriodTrackerSheet";
+import { isBirthdayToday } from "@/utils/birthday";
+
+const IS_BIRTHDAY = isBirthdayToday();
 
 const NAV_CARDS = [
   {
@@ -94,46 +97,48 @@ const MemoryHub = () => {
           />
         </motion.div>
 
-        {/* ── Greeting ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.9, delay: 0.25 }}
-          className="text-center px-6 mt-1 mb-7"
-        >
-          <p
-            className="text-xs font-semibold uppercase tracking-[0.22em] mb-1"
-            style={{ color: "hsl(340, 50%, 62%)", fontFamily: "'Quicksand', sans-serif" }}
+        {/* ── Birthday greeting — visible on March 21 only ── */}
+        {IS_BIRTHDAY && (
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.9, delay: 0.25 }}
+            className="text-center px-6 mt-1 mb-7"
           >
-            celebrating you
-          </p>
-          <h1
-            className="text-[2.6rem] leading-tight"
-            style={{
-              fontFamily: "'Dancing Script', cursive",
-              fontWeight: 700,
-              background: "linear-gradient(135deg, hsl(340,80%,58%) 0%, hsl(350,70%,52%) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Happy Birthday,
-          </h1>
-          <h1
-            className="text-[3rem] leading-tight -mt-1"
-            style={{
-              fontFamily: "'Dancing Script', cursive",
-              fontWeight: 700,
-              background: "linear-gradient(135deg, hsl(350,75%,55%) 0%, hsl(10,70%,58%) 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            Kanze ✨
-          </h1>
-        </motion.div>
+            <p
+              className="text-xs font-semibold uppercase tracking-[0.22em] mb-1"
+              style={{ color: "hsl(340, 50%, 62%)", fontFamily: "'Quicksand', sans-serif" }}
+            >
+              celebrating you
+            </p>
+            <h1
+              className="text-[2.6rem] leading-tight"
+              style={{
+                fontFamily: "'Dancing Script', cursive",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, hsl(340,80%,58%) 0%, hsl(350,70%,52%) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Happy Birthday,
+            </h1>
+            <h1
+              className="text-[3rem] leading-tight -mt-1"
+              style={{
+                fontFamily: "'Dancing Script', cursive",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, hsl(350,75%,55%) 0%, hsl(10,70%,58%) 100%)",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                backgroundClip: "text",
+              }}
+            >
+              Kanze ✨
+            </h1>
+          </motion.div>
+        )}
 
         {/* ── Nav Cards ── */}
         <div className="w-full max-w-sm px-5 grid grid-cols-2 gap-3">

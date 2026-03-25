@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import CandleScreen from "../components/CandleScreen";
+import { isBirthdayToday } from "@/utils/birthday";
 
 const Index = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<(Event & { prompt: () => void }) | null>(null);
-  const [showInstall, setShowInstall] = useState(false);
+  const [showInstall,  setShowInstall]  = useState(false);
   const [introStarted, setIntroStarted] = useState(false);
   const navigate = useNavigate();
 
@@ -12,19 +13,14 @@ const Index = () => {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      // Show install screen if not already in intro
-      if (!introStarted) {
-        setShowInstall(true);
-      }
+      if (!introStarted) setShowInstall(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, [introStarted]);
 
   const handleInstall = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-    }
+    if (deferredPrompt) deferredPrompt.prompt();
     setShowInstall(false);
     setIntroStarted(true);
   };
@@ -35,22 +31,27 @@ const Index = () => {
   };
 
   const handleIntroComplete = useCallback(() => {
-    // Trigger install prompt after intro if it was deferred
-    if (deferredPrompt) {
-      setTimeout(() => deferredPrompt.prompt(), 1500);
-    }
+    if (deferredPrompt) setTimeout(() => deferredPrompt.prompt(), 1500);
     navigate("/hub");
   }, [deferredPrompt, navigate]);
 
-  // If no install prompt detected after 1s, start intro
+  /* ── Auto-start after brief delay ── */
   useEffect(() => {
     if (!showInstall && !introStarted) {
-      const t = setTimeout(() => setIntroStarted(true), 1000);
+      const t = setTimeout(() => {
+        if (isBirthdayToday()) {
+          /* Birthday: launch candle intro as normal */
+          setIntroStarted(true);
+        } else {
+          /* Non-birthday: skip intro, go straight to hub */
+          navigate("/hub", { replace: true });
+        }
+      }, 1200);
       return () => clearTimeout(t);
     }
-  }, [showInstall, introStarted]);
+  }, [showInstall, introStarted, navigate]);
 
-  // Install screen
+  /* Install screen */
   if (showInstall && !introStarted) {
     return (
       <div className="fixed inset-0 bg-candle-dark flex flex-col items-center justify-center px-8">
@@ -83,10 +84,12 @@ const Index = () => {
     );
   }
 
+  /* Loading state — dark background while we decide where to go */
   if (!introStarted) {
     return <div className="fixed inset-0 bg-candle-dark" />;
   }
 
+  /* Birthday only: full candle intro */
   return <CandleScreen onComplete={handleIntroComplete} />;
 };
 
