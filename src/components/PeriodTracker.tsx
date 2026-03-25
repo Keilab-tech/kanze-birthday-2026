@@ -799,7 +799,7 @@ interface ModalState {
   initialStart: string; initialEnd: string | null;
 }
 
-const AppView = () => {
+const AppView = ({ onReset }: { onReset: () => void }) => {
   const [logs,        setLogs]        = useState<PeriodLog[]>(loadLogs);
   const [storedCycle, setStoredCycle] = useState(loadStoredCycle);
   const [calMonth,    setCalMonth]    = useState(() => new Date());
@@ -843,7 +843,7 @@ const AppView = () => {
   function handleReset() {
     if (!confirm("Reset all cycle data? This can't be undone.")) return;
     [LS.SETUP, LS.LOGS, LS.CYCLE].forEach(k => localStorage.removeItem(k));
-    window.location.reload();
+    onReset();
   }
 
   return (
@@ -1032,7 +1032,7 @@ const PeriodTracker = () => {
       )}
       {view === "app" && (
         <motion.div key="app" initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }} style={{ minHeight: "100%", position: "relative" }}>
-          <AppView />
+          <AppView onReset={() => setView("welcome")} />
         </motion.div>
       )}
     </AnimatePresence>
