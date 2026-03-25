@@ -1,71 +1,54 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import CandleScreen from "../components/CandleScreen";
-import BirthdayLockscreen from "../components/BirthdayLockscreen";
-import { isBirthdayAhead, isBirthdayToday, isBirthdayOver } from "@/utils/birthday";
-
-type Phase = "loading" | "locked" | "candle" | "redirect";
+import { isBirthdayToday } from "@/utils/birthday";
 
 const Index = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<(Event & { prompt: () => void }) | null>(null);
   const [showInstall,  setShowInstall]  = useState(false);
-  const [phase, setPhase] = useState<Phase>("loading");
+  const [introStarted, setIntroStarted] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as Event & { prompt: () => void });
-      if (phase === "loading") setShowInstall(true);
+      if (!introStarted) setShowInstall(true);
     };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
-  }, [phase]);
+  }, [introStarted]);
 
   const handleInstall = async () => {
     if (deferredPrompt) deferredPrompt.prompt();
     setShowInstall(false);
-    startApp();
+    setIntroStarted(true);
   };
 
   const handleSkipInstall = () => {
     setShowInstall(false);
-    startApp();
+    setIntroStarted(true);
   };
-
-  const startApp = useCallback(() => {
-    if (isBirthdayAhead()) {
-      setPhase("locked");
-    } else if (isBirthdayToday()) {
-      setPhase("candle");
-    } else {
-      // Birthday is over — go straight to hub
-      setPhase("redirect");
-    }
-  }, []);
-
-  /* Auto-start after brief loading delay */
-  useEffect(() => {
-    if (!showInstall && phase === "loading") {
-      const t = setTimeout(startApp, 1200);
-      return () => clearTimeout(t);
-    }
-  }, [showInstall, phase, startApp]);
-
-  /* Redirect phase */
-  useEffect(() => {
-    if (phase === "redirect") {
-      navigate("/hub", { replace: true });
-    }
-  }, [phase, navigate]);
 
   const handleIntroComplete = useCallback(() => {
     if (deferredPrompt) setTimeout(() => deferredPrompt.prompt(), 1500);
     navigate("/hub");
   }, [deferredPrompt, navigate]);
 
-  /* Install prompt */
-  if (showInstall && phase === "loading") {
+  useEffect(() => {
+    if (!showInstall && !introStarted) {
+      const t = setTimeout(() => {
+        if (isBirthdayToday()) {
+          setIntroStarted(true);
+        } else {
+          navigate("/hub", { replace: true });
+        }
+      }, 1200);
+      return () => clearTimeout(t);
+    }
+  }, [showInstall, introStarted, navigate]);
+
+  if (showInstall && !introStarted) {
     return (
       <div className="fixed inset-0 bg-candle-dark flex flex-col items-center justify-center px-8">
         <h1
@@ -97,17 +80,10 @@ const Index = () => {
     );
   }
 
-  /* Initial dark loading */
-  if (phase === "loading" || phase === "redirect") {
+  if (!introStarted) {
     return <div className="fixed inset-0 bg-candle-dark" />;
   }
 
-  /* Pre-birthday lockscreen */
-  if (phase === "locked") {
-    return <BirthdayLockscreen onUnlock={() => setPhase("candle")} />;
-  }
-
-  /* Birthday — full candle intro */
   return <CandleScreen onComplete={handleIntroComplete} />;
 };
 

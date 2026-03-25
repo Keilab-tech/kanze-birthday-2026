@@ -7,86 +7,31 @@ export const BIRTHDAY_MONTH = 2;   // March (0-indexed)
 export const BIRTHDAY_DAY   = 29;
 export const BIRTH_YEAR     = 2005;
 
-/* ── TEST MODE ───────────────────────────────────────────────────
-   Set TEST_MODE = true to simulate the birthday arriving in
-   TEST_MINUTES_FROM_NOW minutes.
-   Flip back to false before deploying.
-──────────────────────────────────────────────────────────────── */
-const TEST_MODE             = true;
-const TEST_MINUTES_FROM_NOW = 1;
-
-/* ── REVIEW MODE ─────────────────────────────────────────────────
-   Set SKIP_LOCK = true to bypass the lockscreen entirely so the
-   app opens straight to the hub for review/testing.
-   Set back to false when done.
-──────────────────────────────────────────────────────────────── */
-const SKIP_LOCK = false;
-
-const TEST_BIRTHDAY_TARGET  = Date.now() + TEST_MINUTES_FROM_NOW * 60 * 1000;
-const TEST_BIRTHDAY_END     = TEST_BIRTHDAY_TARGET + 24 * 60 * 60 * 1000;
-
-/* ── Core time helpers ─────────────────────────────────────────── */
-
-/** Midnight on this year's birthday. */
 function thisYearBirthdayStart(): Date {
   return new Date(new Date().getFullYear(), BIRTHDAY_MONTH, BIRTHDAY_DAY, 0, 0, 0, 0);
 }
 
-/** Midnight on the day after this year's birthday (birthday window end). */
 function thisYearBirthdayEnd(): Date {
   const d = thisYearBirthdayStart();
   d.setDate(d.getDate() + 1);
   return d;
 }
 
-/* ── Public API ─────────────────────────────────────────────────── */
-
-/** True while the birthday is still in the future (lockscreen phase). */
-export function isBirthdayAhead(): boolean {
-  if (SKIP_LOCK) return false;
-  if (TEST_MODE) return Date.now() < TEST_BIRTHDAY_TARGET;
-  return new Date() < thisYearBirthdayStart();
-}
-
-/** True for the full 24-hour birthday window (candle / party phase). */
+/** True for the full 24-hour birthday window. */
 export function isBirthdayToday(): boolean {
-  if (TEST_MODE) {
-    const now = Date.now();
-    return now >= TEST_BIRTHDAY_TARGET && now < TEST_BIRTHDAY_END;
-  }
   const now = new Date();
   return now >= thisYearBirthdayStart() && now < thisYearBirthdayEnd();
 }
 
-/** True once the birthday has fully passed for this year. */
-export function isBirthdayOver(): boolean {
-  if (TEST_MODE) return Date.now() >= TEST_BIRTHDAY_END;
-  return new Date() >= thisYearBirthdayEnd();
-}
-
 /**
  * The Date of the NEXT upcoming birthday start.
- * - Before birthday  → this year's birthday
- * - During / after   → next year's birthday
+ * - Before / on birthday today → next year's birthday
+ * - Before this year's birthday → this year's birthday
  */
 export function getNextBirthday(): Date {
-  if (TEST_MODE) {
-    if (Date.now() < TEST_BIRTHDAY_TARGET) {
-      // Still counting down to birthday
-      return new Date(TEST_BIRTHDAY_TARGET);
-    }
-    // Birthday is happening now or just passed — next birthday is 1 year from the target
-    const next = new Date(TEST_BIRTHDAY_TARGET);
-    next.setFullYear(next.getFullYear() + 1);
-    return next;
-  }
-  if (isBirthdayAhead()) return thisYearBirthdayStart();
-  return new Date(
-    new Date().getFullYear() + 1,
-    BIRTHDAY_MONTH,
-    BIRTHDAY_DAY,
-    0, 0, 0, 0
-  );
+  const now = new Date();
+  if (now < thisYearBirthdayStart()) return thisYearBirthdayStart();
+  return new Date(now.getFullYear() + 1, BIRTHDAY_MONTH, BIRTHDAY_DAY, 0, 0, 0, 0);
 }
 
 /** Age Kanze will turn at the next birthday. */
