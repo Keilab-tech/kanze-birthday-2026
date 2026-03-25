@@ -20,7 +20,7 @@ const TEST_MINUTES_FROM_NOW = 1;
    app opens straight to the hub for review/testing.
    Set back to false when done.
 ──────────────────────────────────────────────────────────────── */
-const SKIP_LOCK = true;
+const SKIP_LOCK = false;
 
 const TEST_BIRTHDAY_TARGET  = Date.now() + TEST_MINUTES_FROM_NOW * 60 * 1000;
 const TEST_BIRTHDAY_END     = TEST_BIRTHDAY_TARGET + 24 * 60 * 60 * 1000;
