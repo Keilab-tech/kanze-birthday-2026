@@ -803,7 +803,9 @@ const AppView = ({ onReset }: { onReset: () => void }) => {
   const [logs,        setLogs]        = useState<PeriodLog[]>(loadLogs);
   const [storedCycle, setStoredCycle] = useState(loadStoredCycle);
   const [calMonth,    setCalMonth]    = useState(() => new Date());
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory,   setShowHistory]   = useState(false);
+  const [endingPeriod,  setEndingPeriod]  = useState(false);
+  const [endDatePick,   setEndDatePick]   = useState("");
   const [modal, setModal] = useState<ModalState>({
     open: false, mode: "add", editingId: null,
     initialStart: format(new Date(), "yyyy-MM-dd"), initialEnd: null,
@@ -893,29 +895,100 @@ const AppView = ({ onReset }: { onReset: () => void }) => {
 
         {/* Active period banner */}
         {activeLog && (
-          <div style={{
-            background: "hsl(350,75%,97%)", border: `1px solid hsl(350,65%,88%)`,
-            borderRadius: 16, padding: "12px 16px",
-            display: "flex", alignItems: "center", justifyContent: "space-between",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.period, boxShadow: `0 0 0 3px hsl(350,70%,88%)` }} />
-              <span style={{ fontSize: 13, fontWeight: 700, fontFamily: C.font, color: C.period }}>
-                Period in progress
-              </span>
+          <motion.div
+            layout
+            style={{
+              background: "hsl(350,75%,97%)", border: `1px solid hsl(350,65%,88%)`,
+              borderRadius: 16, overflow: "hidden",
+            }}
+          >
+            {/* top row */}
+            <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: "50%", background: C.period, boxShadow: `0 0 0 3px hsl(350,70%,88%)` }} />
+                <span style={{ fontSize: 13, fontWeight: 700, fontFamily: C.font, color: C.period }}>
+                  Period in progress
+                </span>
+              </div>
+              <button
+                data-testid="button-end-period-open"
+                onClick={() => {
+                  const defaultEnd = format(new Date(), "yyyy-MM-dd");
+                  setEndDatePick(defaultEnd);
+                  setEndingPeriod(v => !v);
+                }}
+                style={{
+                  padding: "7px 16px", borderRadius: 99, border: "none",
+                  background: endingPeriod ? C.border : C.period,
+                  color: endingPeriod ? C.textMid : "#fff",
+                  fontSize: 12, fontWeight: 700, fontFamily: C.font, cursor: "pointer",
+                  transition: "all 0.18s",
+                }}
+              >
+                {endingPeriod ? "Cancel" : "End period"}
+              </button>
             </div>
-            <button
-              data-testid="button-end-period"
-              onClick={() => persist(logs.map(l => l.id === activeLog.id ? { ...l, endDate: format(new Date(), "yyyy-MM-dd") } : l))}
-              style={{
-                padding: "7px 16px", borderRadius: 99, border: "none",
-                background: C.period, color: "#fff",
-                fontSize: 12, fontWeight: 700, fontFamily: C.font, cursor: "pointer",
-              }}
-            >
-              End today
-            </button>
-          </div>
+
+            {/* expandable date picker */}
+            <AnimatePresence>
+              {endingPeriod && (
+                <motion.div
+                  key="end-picker"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.22 }}
+                  style={{ overflow: "hidden" }}
+                >
+                  <div style={{
+                    padding: "0 16px 14px",
+                    borderTop: "1px solid hsl(350,60%,90%)",
+                    paddingTop: 12,
+                    display: "flex", flexDirection: "column", gap: 10,
+                  }}>
+                    <p style={{ margin: 0, fontSize: 12, fontFamily: C.font, color: "hsl(350,45%,50%)" }}>
+                      When did your period end? Pick the last day you had it.
+                    </p>
+                    <input
+                      data-testid="input-end-period-date"
+                      type="date"
+                      value={endDatePick}
+                      min={activeLog.startDate}
+                      max={format(new Date(), "yyyy-MM-dd")}
+                      onChange={e => setEndDatePick(e.target.value)}
+                      style={{
+                        width: "100%", borderRadius: 12, padding: "11px 14px",
+                        fontSize: 14, fontFamily: C.font, fontWeight: 600,
+                        color: C.textMain, background: "#fff",
+                        border: `1.5px solid hsl(350,55%,85%)`,
+                        outline: "none", WebkitAppearance: "none",
+                        boxSizing: "border-box",
+                      } as React.CSSProperties}
+                    />
+                    <button
+                      data-testid="button-end-period-save"
+                      onClick={() => {
+                        if (!endDatePick) return;
+                        persist(logs.map(l =>
+                          l.id === activeLog.id ? { ...l, endDate: endDatePick } : l
+                        ));
+                        setEndingPeriod(false);
+                      }}
+                      style={{
+                        width: "100%", padding: "12px", borderRadius: 12, border: "none",
+                        background: `linear-gradient(135deg, ${C.period} 0%, hsl(340,70%,50%) 100%)`,
+                        color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: C.font,
+                        cursor: "pointer",
+                        boxShadow: "0 4px 14px hsl(350 65% 55% / 0.25)",
+                      }}
+                    >
+                      Save end date
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
         )}
 
         {/* Calendar */}
