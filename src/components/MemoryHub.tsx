@@ -7,10 +7,9 @@ import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
 import PhotoSlider from "./PhotoSlider";
 import PeriodTrackerSheet from "./PeriodTrackerSheet";
-import { isBirthdayToday, isBirthdayOver } from "@/utils/birthday";
+import { isBirthdayToday } from "@/utils/birthday";
 
 const IS_BIRTHDAY = isBirthdayToday();
-const IS_OVER     = isBirthdayOver();
 
 const NAV_CARDS = [
   {
@@ -64,9 +63,9 @@ const MemoryHub = () => {
         transition={{ delay: 0.4, duration: 0.4, type: "spring", stiffness: 200 }}
         whileHover={{ scale: 1.12 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => IS_OVER ? setShowWaitModal(true) : navigate("/")}
+        onClick={() => !IS_BIRTHDAY ? setShowWaitModal(true) : navigate("/")}
         data-testid="button-home"
-        title={IS_OVER ? "Blow the candle" : "Back to cake"}
+        title={!IS_BIRTHDAY ? "Blow the candle" : "Back to cake"}
         className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center"
         style={{
           background: "hsl(0 0% 100% / 0.65)",
