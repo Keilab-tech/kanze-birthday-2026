@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Home, Images, BookOpen, Mail } from "lucide-react";
 import PinkParticlesBackground from "./PinkParticlesBackground";
@@ -6,9 +7,10 @@ import MusicPlayerBar from "./MusicToggle";
 import BirthdayCountdown from "./BirthdayCountdown";
 import PhotoSlider from "./PhotoSlider";
 import PeriodTrackerSheet from "./PeriodTrackerSheet";
-import { isBirthdayToday } from "@/utils/birthday";
+import { isBirthdayToday, isBirthdayOver } from "@/utils/birthday";
 
 const IS_BIRTHDAY = isBirthdayToday();
+const IS_OVER     = isBirthdayOver();
 
 const NAV_CARDS = [
   {
@@ -45,6 +47,7 @@ const NAV_CARDS = [
 
 const MemoryHub = () => {
   const navigate = useNavigate();
+  const [showWaitModal, setShowWaitModal] = useState(false);
 
   return (
     <div className="min-h-screen relative overflow-x-hidden overflow-y-auto"
@@ -61,9 +64,9 @@ const MemoryHub = () => {
         transition={{ delay: 0.4, duration: 0.4, type: "spring", stiffness: 200 }}
         whileHover={{ scale: 1.12 }}
         whileTap={{ scale: 0.9 }}
-        onClick={() => navigate("/")}
+        onClick={() => IS_OVER ? setShowWaitModal(true) : navigate("/")}
         data-testid="button-home"
-        title="Back to cake"
+        title={IS_OVER ? "Blow the candle" : "Back to cake"}
         className="fixed top-4 left-4 z-30 rounded-full w-11 h-11 flex items-center justify-center"
         style={{
           background: "hsl(0 0% 100% / 0.65)",
@@ -76,6 +79,75 @@ const MemoryHub = () => {
       >
         <Home size={17} />
       </motion.button>
+
+      {/* "Wait till next birthday" modal — shown after birthday is over */}
+      <AnimatePresence>
+        {showWaitModal && (
+          <motion.div
+            key="wait-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-6"
+            style={{ background: "hsl(340 30% 10% / 0.55)", backdropFilter: "blur(6px)" }}
+            onClick={() => setShowWaitModal(false)}
+          >
+            <motion.div
+              key="wait-modal-card"
+              initial={{ opacity: 0, scale: 0.88, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 16 }}
+              transition={{ type: "spring", stiffness: 260, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-[22rem] rounded-3xl p-8 flex flex-col items-center gap-5 text-center"
+              style={{
+                background: "linear-gradient(160deg, hsl(340,90%,97%) 0%, hsl(350,80%,94%) 100%)",
+                boxShadow: "0 24px 64px hsl(340 60% 50% / 0.22), 0 4px 16px hsl(340 40% 60% / 0.15)",
+                border: "1px solid hsl(340, 60%, 88%)",
+              }}
+            >
+              {/* Candle emoji with glow */}
+              <motion.div
+                animate={{ scale: [1, 1.1, 1] }}
+                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                className="text-5xl"
+                style={{ filter: "drop-shadow(0 0 12px hsl(40 90% 70% / 0.7))" }}
+              >
+                🕯️
+              </motion.div>
+
+              <div className="flex flex-col gap-2">
+                <p
+                  className="text-lg leading-snug"
+                  style={{
+                    fontFamily: "'Dancing Script', cursive",
+                    fontWeight: 700,
+                    fontSize: "1.45rem",
+                    color: "hsl(340, 55%, 38%)",
+                  }}
+                >
+                  Wait till your next birthday to blow the candle
+                </p>
+                <p className="text-2xl">habibi 🥰❤️</p>
+              </div>
+
+              <button
+                onClick={() => setShowWaitModal(false)}
+                className="mt-1 rounded-full px-8 py-3 text-sm font-semibold"
+                style={{
+                  background: "linear-gradient(135deg, hsl(340,75%,65%), hsl(350,70%,60%))",
+                  color: "white",
+                  fontFamily: "'Quicksand', sans-serif",
+                  boxShadow: "0 4px 18px hsl(340 70% 60% / 0.32)",
+                }}
+              >
+                Back to dashboard
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="relative z-10 flex flex-col items-center pb-20">
 
