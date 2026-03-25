@@ -12,8 +12,8 @@ export const BIRTH_YEAR     = 2005;
    TEST_MINUTES_FROM_NOW minutes.
    Flip back to false before deploying.
 ──────────────────────────────────────────────────────────────── */
-const TEST_MODE             = false;
-const TEST_MINUTES_FROM_NOW = 5;
+const TEST_MODE             = true;
+const TEST_MINUTES_FROM_NOW = 2;
 
 const TEST_BIRTHDAY_TARGET  = Date.now() + TEST_MINUTES_FROM_NOW * 60 * 1000;
 const TEST_BIRTHDAY_END     = TEST_BIRTHDAY_TARGET + 24 * 60 * 60 * 1000;
