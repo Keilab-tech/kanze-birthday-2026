@@ -13,7 +13,7 @@ export const BIRTH_YEAR     = 2005;
    Flip back to false before deploying.
 ──────────────────────────────────────────────────────────────── */
 const TEST_MODE             = true;
-const TEST_MINUTES_FROM_NOW = -1; // negative = birthday already started (right now)
+const TEST_MINUTES_FROM_NOW = 1;
 
 /* ── REVIEW MODE ─────────────────────────────────────────────────
    Set SKIP_LOCK = true to bypass the lockscreen entirely so the
