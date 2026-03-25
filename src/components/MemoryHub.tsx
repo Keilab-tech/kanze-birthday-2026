@@ -29,14 +29,14 @@ const NAV_CARDS = [
     emoji: "",
   },
   {
-    label: "",
-    sublabel: "",
+    label: "A Letter",
+    sublabel: "From the heart",
     icon: Mail,
     path: "/letter",
     delay: 0.75,
     accent: "hsl(330, 68%, 65%)",
     glow: "hsl(330 58% 65% / 0.22)",
-    emoji: "💌",
+    emoji: "",
   },
 ];
 
